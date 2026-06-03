@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velosify CRM</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <link rel="apple-touch-icon" href="/static/favicon.svg" />
+  <meta name="theme-color" content="#02040a" />
+  <meta name="description" content="Velosify CRM — Your business on autopilot. Lead generation, pipeline, and AI-powered outreach in one place." />
+  <meta property="og:title" content="Velosify CRM — Your business on autopilot" />
+  <meta property="og:description" content="Lead generation, pipeline, and AI-powered outreach in one place." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://crm.velosify.ai/" />
+  <meta property="og:image" content="https://velosify.ai/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Velosify CRM — Your business on autopilot" />
+  <meta name="twitter:description" content="Lead generation, pipeline, and AI-powered outreach in one place." />
+  <meta name="twitter:image" content="https://velosify.ai/og-image.png" />
+
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1524305765996952');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1524305765996952&ev=PageView&noscript=1" /></noscript>
+  <!-- End Meta Pixel Code -->
+
+  <!-- Sora (display), Hanken Grotesk (body), JetBrains Mono (data) — matches landing -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Hanken+Grotesk:wght@400;500&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css?v=186" />
+</head>
+<body>
+  <!-- Background layer: particle canvas + nebula glows, fixed behind all content.
+       Copied verbatim from the landing page (app.py LANDING_HTML). Particle
+       JS lives in /static/landing-bg.js so every page shares one source. -->
+  <canvas id="hero-canvas" style="position:fixed;inset:0;pointer-events:none;opacity:0.4;z-index:0;"></canvas>
+  <div class="nebula-glow" style="width:600px;height:600px;background:#8B5CF6;top:-200px;left:-200px;"></div>
+  <div class="nebula-glow" style="width:500px;height:500px;background:#3B82F6;bottom:10%;right:-100px;"></div>
+  <aside class="sidebar">
+    <div class="brand v2-brand-sidebar">
+      <a href="/" class="v2-brand" aria-label="Velosify CRM home">
+        <img class="v2-rocket" src="/static/velosify-logo.svg?v=9" alt="" aria-hidden="true" />
+        <span class="v2-brand-word">VELOSIFY</span>
+      </a>
+    </div>
+    <div class="project-switcher">
+      <div class="project-switcher-label">Project</div>
+      <button id="project-switcher-btn" class="project-switcher-btn" type="button">
+        <span id="current-project-name">Loading…</span>
+        <span class="project-switcher-caret">▾</span>
+      </button>
+      <div id="project-switcher-menu" class="project-switcher-menu" hidden></div>
+    </div>
+    <nav class="nav">
+      <button class="nav-item" data-view="projects">
+        <span class="nav-icon">⌘</span> Projects
+      </button>
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
+            <!-- Four ascending bars on a shared baseline — standard
+                 SaaS dashboard metaphor (Stripe / Linear / Notion style). -->
+            <line x1="3"    y1="13" x2="3"    y2="9"/>
+            <line x1="6.5"  y1="13" x2="6.5"  y2="6"/>
+            <line x1="10"   y1="13" x2="10"   y2="8"/>
+            <line x1="13.5" y1="13" x2="13.5" y2="4"/>
+          </svg>
+        </span> Dashboard
+      </button>
+      <button class="nav-item" data-view="deals">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M2 3h12l-4.5 6v4.5L6.5 12V9z"/>
+          </svg>
+        </span> Deals Pipeline
+      </button>
+      <button type="button" class="nav-section-header" id="leadgen-section-toggle" aria-expanded="false" aria-controls="leadgen-section-children">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+            <circle cx="8" cy="8" r="5.5"/>
+            <circle cx="8" cy="8" r="2.4"/>
+            <line x1="8" y1="0.5" x2="8" y2="3"/>
+            <line x1="8" y1="13" x2="8" y2="15.5"/>
+            <line x1="0.5" y1="8" x2="3" y2="8"/>
+            <line x1="13" y1="8" x2="15.5" y2="8"/>
+          </svg>
+        </span>
+        <span class="nav-section-label">Lead Generator</span>
+        <span class="nav-section-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-section-children collapsed" id="leadgen-section-children">
+        <button class="nav-item nav-sub" data-view="leadgen" data-leadgen-mode="free">
+          Starter
+        </button>
+        <button class="nav-item nav-sub" data-view="leadgen" data-leadgen-mode="pro">
+          Pro
+        </button>
+      </div>
+      <button class="nav-item" data-view="contacts">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+            <circle cx="8" cy="5.5" r="2.6"/>
+            <path d="M2.8 14c0-2.7 2.3-4.6 5.2-4.6s5.2 1.9 5.2 4.6"/>
+          </svg>
+        </span> Contacts
+      </button>
+      <button class="nav-item" data-view="companies">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <rect x="3" y="2" width="10" height="12" rx="0.6"/>
+            <path d="M5.5 4.7h1M9.5 4.7h1M5.5 7.4h1M9.5 7.4h1M5.5 10.1h1M9.5 10.1h1"/>
+            <path d="M6.6 14v-2h2.8v2"/>
+          </svg>
+        </span> Companies
+      </button>
+      <button class="nav-item" data-view="activities">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <!-- Three stacked rows with bullet dots on the left, mirroring
+                 Close CRM's activities-feed icon. -->
+            <circle cx="3.5" cy="4"  r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="3.5" cy="8"  r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="3.5" cy="12" r="1.1" fill="currentColor" stroke="none"/>
+            <line x1="6.5" y1="4"  x2="13" y2="4"/>
+            <line x1="6.5" y1="8"  x2="13" y2="8"/>
+            <line x1="6.5" y1="12" x2="13" y2="12"/>
+          </svg>
+        </span> Activities
+      </button>
+      <button type="button" class="nav-section-header" id="scripts-section-toggle" aria-expanded="false" aria-controls="scripts-section-children">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M3 2h7l3 3v9H3z"/>
+            <path d="M10 2v3h3"/>
+            <line x1="5.5" y1="8" x2="10.5" y2="8"/>
+            <line x1="5.5" y1="10.5" x2="10.5" y2="10.5"/>
+            <line x1="5.5" y1="6" x2="8" y2="6"/>
+          </svg>
+        </span>
+        <span class="nav-section-label">Scripts</span>
+        <span class="nav-section-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-section-children collapsed" id="scripts-section-children">
+        <button class="nav-item nav-sub" data-view="scripts" data-script-mode="web-design">
+          Web Design
+        </button>
+        <button class="nav-item nav-sub" data-view="scripts" data-script-mode="seo">
+          SEO Services
+        </button>
+        <button class="nav-item nav-sub" data-view="scripts" data-script-mode="graphic-design">
+          Graphic Design
+        </button>
+        <button class="nav-item nav-sub" data-view="scripts" data-script-mode="social-media">
+          Social Media
+        </button>
+        <button class="nav-item nav-sub" data-view="scripts" data-script-mode="marketing-agency">
+          Marketing Agency
+        </button>
+      </div>
+      <button type="button" class="nav-section-header" id="games-section-toggle" aria-expanded="false" aria-controls="games-section-children">
+        <span class="nav-icon" aria-hidden="true">
+          <!-- Modern gamepad — flatter top, contoured grip handles
+               curling down at each end (PS5/Xbox silhouette), D-pad
+               on the left, four action buttons in a diamond on the
+               right. Reads as "modern console controller" at sidebar
+               size. -->
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M 4 6 H 12 C 13.5 6 14.5 7 14.5 9 C 14.5 11 13 12 11.5 11.5 C 10.5 11.2 9.5 10.5 8 10.5 C 6.5 10.5 5.5 11.2 4.5 11.5 C 3 12 1.5 11 1.5 9 C 1.5 7 2.5 6 4 6 Z"/>
+            <line x1="4.5" y1="7.5" x2="4.5" y2="9.5"/>
+            <line x1="3.5" y1="8.5" x2="5.5" y2="8.5"/>
+            <circle cx="11.5" cy="7.5" r="0.5" fill="currentColor" stroke="none"/>
+            <circle cx="12.7" cy="8.5" r="0.5" fill="currentColor" stroke="none"/>
+            <circle cx="11.5" cy="9.5" r="0.5" fill="currentColor" stroke="none"/>
+            <circle cx="10.3" cy="8.5" r="0.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <span class="nav-section-label">Games</span>
+        <span class="nav-section-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-section-children collapsed" id="games-section-children">
+        <button class="nav-item nav-sub" data-view="freegame" data-game-mode="runner">
+          VelosiRunner
+        </button>
+        <button class="nav-item nav-sub" data-view="freegame" data-game-mode="blackjack">
+          Blackjack
+        </button>
+        <button class="nav-item nav-sub" data-view="freegame" data-game-mode="chess">
+          Chess
+        </button>
+      </div>
+      <button class="nav-item" data-view="referrals">
+        <span class="nav-icon" aria-hidden="true">
+          <!-- Two figures + a connecting arc — classic "share / refer" glyph -->
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <circle cx="5" cy="5.5" r="1.8"/>
+            <path d="M2 12.5c0-1.7 1.3-3 3-3s3 1.3 3 3"/>
+            <circle cx="11" cy="5.5" r="1.8"/>
+            <path d="M8 12.5c0-1.7 1.3-3 3-3s3 1.3 3 3"/>
+          </svg>
+        </span> Referral Program
+      </button>
+      <button class="nav-item" data-view="support">
+        <span class="nav-icon" aria-hidden="true">
+          <!-- Speech bubble with three dots inside — the universal
+               "chat / talk to support" glyph. Tail anchored at the
+               bottom-left so the bubble reads as "incoming". -->
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M 2 4 C 2 3 2.7 2.5 3.5 2.5 H 12.5 C 13.3 2.5 14 3 14 4 V 9.5 C 14 10.5 13.3 11 12.5 11 H 7 L 4 13.5 V 11 H 3.5 C 2.7 11 2 10.5 2 9.5 Z"/>
+            <circle cx="5.5" cy="6.75" r="0.5" fill="currentColor" stroke="none"/>
+            <circle cx="8"   cy="6.75" r="0.5" fill="currentColor" stroke="none"/>
+            <circle cx="10.5" cy="6.75" r="0.5" fill="currentColor" stroke="none"/>
+          </svg>
+        </span> Support
+      </button>
+      <button type="button" class="nav-section-header" id="settings-section-toggle" aria-expanded="false" aria-controls="settings-section-children">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </span>
+        <span class="nav-section-label">Settings</span>
+        <span class="nav-section-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-section-children collapsed" id="settings-section-children">
+        <button class="nav-item nav-sub" data-view="settings" data-settings-mode="profile">
+          Profile
+        </button>
+        <button class="nav-item nav-sub" data-view="settings" data-settings-mode="api-keys">
+          API Keys
+        </button>
+        <button class="nav-item nav-sub" data-view="settings" data-settings-mode="billing">
+          Billing
+        </button>
+      </div>
+      <button class="nav-item superadmin-only" data-view="users" hidden>
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M8 1.5l2 4.2 4.6.6-3.3 3.2.8 4.5L8 11.8 3.9 14l.8-4.5L1.4 6.3l4.6-.6z"/>
+          </svg>
+        </span> Admin Panel
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <a id="billing-chip" class="billing-chip" href="/billing" hidden></a>
+      <div class="user-card">
+        <div class="user-meta">
+          <div class="user-label">Signed in as</div>
+          <div class="user-name" id="user-name">—</div>
+        </div>
+        <form action="/logout" method="post" class="logout-form">
+          <button type="submit" class="logout-btn" title="Log out">Log out</button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="billing-banner" class="billing-banner" hidden></div>
+    <header class="topbar">
+      <button id="menu-toggle" class="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <h1 id="view-title">Dashboard</h1>
+      <div class="topbar-actions">
+        <input id="search" type="search" placeholder="Search..." />
+        <!-- Canonical Import / Export buttons — kept in topbar so the
+             existing per-view JS (sets dataset.entity, toggles visibility)
+             still works for Companies / Deals / Activities exports.
+             On the Contacts view they hide via CSS and visual mirrors in
+             the contacts-row-actions take over. -->
+        <button id="import-btn" class="btn" hidden>
+          <span class="btn-full">Import CSV</span>
+          <span class="btn-short">⇪</span>
+        </button>
+        <button id="export-btn" class="btn" hidden>
+          <span class="btn-full">Export CSV</span>
+          <span class="btn-short">⇩</span>
+        </button>
+
+        <!-- Mobile-only overflow menu. The 4 secondary actions (Import/Export/
+             Identify Lines/Verify Mobiles) collapse into a single ⋯ button on
+             narrow viewports so the Contacts title stays visible and the
+             primary actions (⚡ Power Dialer, + New) keep their breathing room. -->
+        <div class="overflow-menu" id="contacts-overflow-menu" hidden>
+          <button type="button" class="btn overflow-toggle" id="contacts-overflow-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">⋯</button>
+          <div class="overflow-panel" id="contacts-overflow-panel" hidden role="menu">
+            <button type="button" class="overflow-item" data-fire="new-btn"><span aria-hidden="true">＋</span> New Contact</button>
+            <button type="button" class="overflow-item" data-fire="pd-activate-btn"><span aria-hidden="true">⚡</span> Power Dialer</button>
+            <button type="button" class="overflow-item" data-fire="line-type-btn"><span aria-hidden="true">☎️</span> Identify Lines</button>
+            <button type="button" class="overflow-item" data-fire="verify-mobiles-btn"><span aria-hidden="true">📱</span> Verify Mobiles</button>
+            <button type="button" class="overflow-item" data-fire="custom-columns-btn"><span aria-hidden="true">⚙</span> Custom Columns</button>
+            <div class="overflow-divider" role="separator"></div>
+            <!-- Search row: actual input, two-way synced with the (hidden on
+                 mobile) topbar #search input so the existing filter logic
+                 fires the same way whether the user typed in the topbar or
+                 the kebab. -->
+            <div class="overflow-search" role="none">
+              <span class="overflow-search-icon" aria-hidden="true">🔍</span>
+              <input type="search" id="overflow-search-input" placeholder="Search…" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+
+        <input id="import-file" type="file" accept=".csv,text/csv" hidden />
+        <button id="pd-activate-btn" class="btn btn-power-dialer" hidden title="Power Dialer — bridge-call through your contacts at speed">
+          <span class="pd-bolt" aria-hidden="true">⚡</span>
+          <span class="btn-full">Power Dialer</span>
+          <span class="btn-short" aria-label="Power Dialer">⚡</span>
+        </button>
+        <button id="new-btn" class="btn btn-primary">
+          <span class="new-btn-full">+ New</span>
+          <span class="new-btn-short">+</span>
+        </button>
+      </div>
+    </header>
+    <div id="sidebar-scrim" class="sidebar-scrim"></div>
+
+    <section id="view-dashboard" class="view active">
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-label">Pipeline Value</div><div class="kpi-value" id="kpi-pipeline">$0</div></div>
+        <div class="kpi"><div class="kpi-label">Closed Won</div><div class="kpi-value" id="kpi-won">$0</div></div>
+        <div class="kpi"><div class="kpi-label">Contacts</div><div class="kpi-value" id="kpi-contacts">0</div></div>
+        <div class="kpi"><div class="kpi-label">Companies</div><div class="kpi-value" id="kpi-companies">0</div></div>
+        <div class="kpi"><div class="kpi-label">Open Tasks</div><div class="kpi-value" id="kpi-tasks">0</div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="panel">
+          <h2>Pipeline by Stage</h2>
+          <div id="stage-chart" class="bar-chart"></div>
+        </div>
+        <div class="panel">
+          <h2>Revenue by Service</h2>
+          <div id="service-chart" class="bar-chart"></div>
+        </div>
+        <div class="panel span-2">
+          <h2>Upcoming Activities</h2>
+          <div id="upcoming-list" class="mini-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-deals" class="view">
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <section id="view-leadgen" class="view">
+      <div class="leadgen-card">
+        <div class="leadgen-header">
+          <h2>Find new leads</h2>
+          <span class="leadgen-tier-badge" id="lg-tier-badge">Starter tier</span>
+        </div>
+        <p class="leadgen-hint" id="lg-hint">
+          Type a postal code or city and an industry. We'll find matching
+          businesses and import them as contacts in the list you choose.
+        </p>
+        <form id="leadgen-form" class="leadgen-form">
+          <div class="form-grid">
+            <div class="field">
+              <label for="lg-country">Country</label>
+              <select id="lg-country" name="country">
+                <!-- Options populated by JS from /api/me on load.
+                     Auto-saves to user profile on submit so the next
+                     search defaults to this pick. -->
+              </select>
+            </div>
+            <div class="field">
+              <label for="lg-zip">Zip code or City, State</label>
+              <div class="autocomplete-wrap">
+                <input id="lg-zip" name="zip" type="text"
+                       placeholder="Zip code or City, State" maxlength="80"
+                       autocomplete="off" required />
+                <ul class="autocomplete-panel" id="lg-zip-suggestions" role="listbox" hidden></ul>
+              </div>
+            </div>
+            <div class="field">
+              <label for="lg-industry">Industry / search</label>
+              <input id="lg-industry" name="query" type="text"
+                     placeholder="Salons" required />
+            </div>
+            <div class="field">
+              <label for="lg-list">Add to list</label>
+              <select id="lg-list" name="list_name" required></select>
+            </div>
+            <div class="field">
+              <label for="lg-count">Max leads</label>
+              <input id="lg-count" name="count" type="number"
+                     min="1" max="60" value="60" />
+              <div class="field-help" id="lg-count-help">Up to 60 results per search.</div>
+            </div>
+          </div>
+          <div class="leadgen-actions">
+            <button type="submit" class="btn btn-primary" id="lg-submit">
+              <span class="lg-submit-label">⌖ Generate leads</span>
+            </button>
+          </div>
+        </form>
+        <div id="lg-result" class="leadgen-result hidden"></div>
+
+        <!-- Pro mode setup card — visible when on the free tier. -->
+        <div id="lg-upgrade-card" class="leadgen-upgrade hidden">
+          <div class="leadgen-upgrade-head">
+            <h3>Unlock more leads</h3>
+            <span class="leadgen-pro-pill">⚡ Pro Mode</span>
+          </div>
+          <p>
+            Starter tier gives you a fixed monthly quota of leads — fast, real
+            Google Maps data, but capped each month.
+          </p>
+          <p>
+            Link your own Google Places API key for <strong>up to 18,000 free scrapes
+            per month</strong> directly from Google — no extra cost, no quota from us,
+            and you only pay anything if you blow past Google's generous monthly
+            free allowance (most users never do).
+          </p>
+          <details class="leadgen-howto">
+            <summary>How to get a Google Places API key (5 minutes)</summary>
+            <ol>
+              <li>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project.</li>
+              <li>Enable the <strong>Places API</strong> under "APIs &amp; Services → Library".</li>
+              <li>Add a billing account (required even for the free tier — you won't be charged unless you exceed it).</li>
+              <li>Go to "APIs &amp; Services → Credentials" → <strong>Create credentials → API key</strong>.</li>
+              <li>Restrict it to <strong>Places API only</strong> for safety.</li>
+              <li>Copy the key (starts with <code>AIza…</code>) and paste it below.</li>
+            </ol>
+          </details>
+          <div class="leadgen-upgrade-actions">
+            <button type="button" class="btn btn-primary" id="lg-add-key">Link my API key</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="view-contacts" class="view">
+      <div class="contacts-header-row">
+        <div class="list-tabs" id="list-tabs"></div>
+        <div class="list-actions" id="list-actions">
+          <button id="list-new-btn" class="btn btn-sm" type="button" title="Create a new list">+ New list</button>
+          <button id="list-rename-btn" class="btn btn-sm" type="button" title="Rename the selected list" hidden>Rename</button>
+          <button id="list-delete-btn" class="btn btn-sm btn-danger-soft" type="button" title="Delete the selected list" hidden>Delete</button>
+        </div>
+        <!-- Action bar on the right: Import / Export / Identify / Verify /
+             Custom Columns / + New contact. Lives inside view-contacts so
+             it auto-shows only on this view. Mobile CSS collapses these
+             individual buttons (they're available via the kebab instead). -->
+        <div class="contacts-row-actions">
+          <!-- Visual mirrors of the topbar #import-btn / #export-btn. They
+               just forward clicks to the canonical buttons (which carry
+               the per-view dataset.entity + click handlers). -->
+          <button id="import-btn-row" class="btn" type="button">
+            <span class="btn-full">Import CSV</span>
+            <span class="btn-short">⇪</span>
+          </button>
+          <button id="export-btn-row" class="btn" type="button">
+            <span class="btn-full">Export CSV</span>
+            <span class="btn-short">⇩</span>
+          </button>
+          <!-- Identify Lines + Verify Mobiles are contacts-only — these
+               ARE the canonical buttons, just relocated from the topbar. -->
+          <button id="line-type-btn" class="btn" type="button" title="Auto-classify phone numbers using libphonenumber + free public NPA-NXX data. Tap a ? badge after to manually mark mobile vs landline.">
+            <span class="btn-full">Identify Lines</span>
+            <span class="btn-short" aria-label="Identify Lines">☎️</span>
+          </button>
+          <button id="verify-mobiles-btn" class="btn" type="button" title="Re-verify Mobile/Unknown contacts via Twilio's real-time LRN database. Catches ported numbers (cell → business PBX). $0.005 per contact.">
+            <span class="btn-full">Verify Mobiles</span>
+            <span class="btn-short" aria-label="Verify Mobiles">📱</span>
+          </button>
+          <button id="custom-columns-btn" class="btn" type="button" title="Show or hide table columns">
+            <span aria-hidden="true">⚙</span> Custom Columns
+          </button>
+          <button id="new-btn-desktop" class="btn btn-primary" type="button" aria-label="New contact" title="New contact">+ New contact</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table sortable resizable-cols" id="contacts-table" data-entity="contacts">
+          <colgroup></colgroup>
+          <thead><tr></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="selection-bar" class="selection-bar hidden" role="toolbar" aria-label="Bulk actions">
+        <div class="selection-bar-count">
+          <span id="selection-count">0</span> selected
+        </div>
+        <div class="selection-bar-actions">
+          <button class="btn btn-primary" data-bulk="pipeline" title="Create Lead-stage deals for the selected contacts">+ Add to Pipeline</button>
+          <button class="btn" data-bulk="move-list" title="Move selected contacts to another list">Move to List</button>
+          <button class="btn btn-danger" data-bulk="delete" title="Permanently delete the selected contacts">Delete</button>
+          <button class="btn btn-ghost" data-bulk="clear" title="Clear selection">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-companies" class="view">
+      <div class="table-wrap">
+        <table class="data-table sortable" id="companies-table" data-entity="companies">
+          <thead>
+            <tr>
+              <th class="col-select"><input type="checkbox" id="select-all-companies" aria-label="Select all companies" /></th>
+              <th data-sort="name">Name</th>
+              <th data-sort="industry">Industry</th>
+              <th data-sort="location">Location</th>
+              <th data-sort="website">Website</th>
+              <th data-sort="notes">Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="companies-selection-bar" class="selection-bar hidden" role="toolbar" aria-label="Bulk actions">
+        <div class="selection-bar-count">
+          <span id="companies-selection-count">0</span> selected
+        </div>
+        <div class="selection-bar-actions">
+          <button class="btn btn-danger" data-co-bulk="delete" title="Permanently delete the selected companies">Delete</button>
+          <button class="btn btn-ghost" data-co-bulk="clear" title="Clear selection">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-activities" class="view">
+      <div class="table-wrap">
+        <table class="data-table sortable" id="activities-table" data-entity="activities">
+          <thead>
+            <tr>
+              <th data-sort="completed" data-type="number">Done</th>
+              <th data-sort="type">Type</th>
+              <th data-sort="subject">Subject</th>
+              <th data-sort="due_date" data-type="date">Due</th>
+              <th data-sort="contact_name">Contact</th>
+              <th data-sort="deal_title">Deal</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         POWER DIALER — full inline page (no modal)
+         Two main UI modes, toggled by JS:
+           data-mode="setup"  → explainer cards + list picker + lifetime stats
+           data-mode="active" → live dial session (contact card, outcomes, etc.)
+         The "done" sub-state lives inside "active" and triggers the summary +
+         "Start Another" affordance.
+    ===================================================================== -->
+    <section id="view-scripts" class="view">
+      <!-- ============================================================ -->
+      <!-- Script: Web Design (No website + Existing website variants) -->
+      <!-- ============================================================ -->
+      <article class="script-card" data-script-pane="web-design">
+        <div class="scripts-tabs">
+          <button type="button" class="scripts-tab active" data-webdesign-tab="no-site">No website</button>
+          <button type="button" class="scripts-tab" data-webdesign-tab="existing">Existing website</button>
+        </div>
+
+        <!-- Sub-pane: No website -->
+        <div class="script-subpane" data-webdesign-pane="no-site">
+        <header class="script-head">
+          <h2>Cold call — No website</h2>
+          <p class="script-tagline">For prospects with a Google listing but no site. Lead with money they're losing, not the absence.</p>
+        </header>
+
+        <section class="script-section">
+          <h3>1. Opener <span class="script-time">10 sec</span></h3>
+          <blockquote>
+            "Hey, is the owner around? Tell them it's <em>[Your name] from [Your company]</em> — I'll be quick."
+          </blockquote>
+          <p class="script-note">No "How are you today?" No "Got a minute?" — those signal cold-caller. "I'll be quick" earns 30 seconds.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>2. Hook <span class="script-time">15 sec</span></h3>
+          <blockquote>
+            "Hey [Name], real quick — I help local <em>[contractors / salons / restaurants]</em> in <em>[your city]</em> book more jobs from Google Maps. I noticed you've got reviews and a phone number on Google but no website tied to your listing — which means when someone Googles you, a chunk of them just bounce because there's nothing for them to look at. I help fix that. Got 30 seconds for me to explain how, or want me to text you the details?"
+          </blockquote>
+          <p class="script-note">Specific observation = you actually looked. Two-option close = both easy yeses.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>3. Discovery <span class="script-time">60 sec, only if they bite</span></h3>
+          <blockquote>"Where do most of your jobs come from right now? Word of mouth, Google, Facebook?"</blockquote>
+          <blockquote>"Got it. And when a brand-new customer who's never met you wants to size you up before calling — what do they see?"</blockquote>
+          <p class="script-note">Makes them feel the gap themselves. They'll usually answer "just my Google listing" — there's your opening.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>4. Offer</h3>
+          <blockquote>
+            "Here's what I'd do. I build you a one-page site — your name, your services, a few photos of your work, click-to-call button, your reviews pulled in from Google. Live in a week. <strong>Three-fifty bucks, hosting included for the first year</strong>. If a single new customer calls because of it, you've made the money back. Want me to send you a couple examples of ones I've done?"
+          </blockquote>
+          <p class="script-note">Low decision threshold. Concrete deliverable. ROI is obvious. Examples = next step.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>5. Objections <span class="script-time">click to expand</span></h3>
+
+          <details class="script-objection">
+            <summary>"I get all my work from word of mouth."</summary>
+            <p>"That's awesome — that's the hard part, you've already done it. Right now those word-of-mouth leads are calling, but every one of them Googles you first. Half of them already have. The website's not for finding new customers — it's for closing the ones who heard about you and aren't sure yet."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I'm too busy."</summary>
+            <p>"That's why I do all of it. You'll spend maybe 15 minutes total — sending me your logo if you have one and looking at the draft. I write the copy, take care of everything else."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I had a website before, didn't help."</summary>
+            <p>"Was anyone updating it? Most of the ones I see were built five years ago, looked dated, didn't show up on phones. The whole game now is mobile and Google reviews — totally different than what you probably had."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"How much?" (asked early, before value is set)</summary>
+            <p>"Depends what you need — I do everything from one-pagers at three-fifty up to full sites with online booking. Want me to take a quick look at your situation and get back to you with a number tomorrow?"</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"Just send me an email." (the brush-off)</summary>
+            <p>"Will do — what's the best email? While I'm at it, what's the one thing that would make this a yes for you? I'll build the proposal around that."</p>
+          </details>
+        </section>
+
+        <section class="script-section">
+          <h3>Industry tweaks</h3>
+          <p><strong>Salons:</strong> Swap "more jobs" for "more bookings." Lead with "Most salons I work with see 5–10 extra bookings a month from a website with online scheduling."</p>
+          <p><strong>Plumbers / HVAC:</strong> Lean on emergencies. "When someone's basement is flooding at 9pm, the first thing they do is Google plumber. The ones with a website + click-to-call get the call. The ones without get the next guy."</p>
+        </section>
+
+        <section class="script-section script-dont">
+          <h3>Don't say</h3>
+          <ul>
+            <li>"Can I have a few minutes of your time?" — gets a no on autopilot.</li>
+            <li>"I'm just calling to check in." — empty calorie sentence.</li>
+            <li>"Do you have a website?" — you already know they don't, this insults.</li>
+            <li>"I noticed your business is missing X, Y, Z." — feels like criticism.</li>
+            <li>"We can offer you a great deal." — agency-speak, sounds like a scam.</li>
+            <li>Anything about SEO, rankings, conversions, impressions — they care about phone calls and bookings, not those words.</li>
+          </ul>
+        </section>
+        </div><!-- /no-site sub-pane -->
+
+        <!-- Sub-pane: Existing website -->
+        <div class="script-subpane hidden" data-webdesign-pane="existing">
+        <header class="script-head">
+          <h2>Cold call — Existing website (outdated)</h2>
+          <p class="script-tagline">For prospects with an old/non-mobile site. Blame the industry change, not them. Frame as "tune-up," not "rebuild."</p>
+        </header>
+
+        <section class="script-section">
+          <h3>1. Opener <span class="script-time">10 sec</span></h3>
+          <blockquote>
+            "Hey, is [owner] around? Tell him it's <em>[Your name] from [Your company]</em>, I'll be quick."
+          </blockquote>
+        </section>
+
+        <section class="script-section">
+          <h3>2. Hook — lead with respect <span class="script-time">20 sec</span></h3>
+          <blockquote>
+            "Hey [Name] — quick reason for the call. I work with <em>[contractors / dentists / law firms]</em> around <em>[your city]</em>. I noticed you've actually got a website up, which puts you ahead of half the businesses in your area — most of them don't have anything. The reason I called is, the way Google ranks local sites changed pretty hard a few years back when most searches moved to phones, and a lot of really established businesses are losing visibility for reasons that have nothing to do with how good they are at what they do. I help fix that. Got 60 seconds for me to explain how it works?"
+          </blockquote>
+          <p class="script-note">Compliments their site. Blames Google, not them. "Established businesses" is implicit praise. "Has nothing to do with how good your business is" absolves them.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>3. The explanation</h3>
+          <blockquote>
+            "So when phones became the main way people search for local services, Google started ranking sites that load fast on mobile higher than ones built for desktop — even if the desktop site is great. That's the main shift. I help local businesses refresh their existing site so it plays nice with the new rules. Same business, same look-and-feel if you want it, just tuned up for phones and faster on Google. Most of my clients see their phone start ringing more within the first month or two."
+          </blockquote>
+          <p class="script-note">"Even if the desktop site is great" gives them an out. "Refresh" / "tune-up" instead of "rebuild." "Same look-and-feel" preserves their pride.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>4. Offer — two tiers</h3>
+          <blockquote>
+            "I do two versions depending on what you want. There's a <strong>tune-up</strong> — keep your current setup mostly intact, modernize the parts Google cares about, that runs around <strong>$400</strong>. Or a <strong>fuller refresh</strong> where I rebuild the whole thing fresh, mobile-first, click-to-call, your Google reviews pulled in automatically — that one's <strong>$700</strong>. Either way, way more affordable than what these used to cost. Want me to send you a couple examples of refreshes I've done in your industry, no strings?"
+          </blockquote>
+          <p class="script-note">Two tiers = bigger psychological yes than "do you want it or not." Cheaper than what they paid before is a relief, not a red flag.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>5. Objections <span class="script-time">click to expand</span></h3>
+
+          <details class="script-objection">
+            <summary>"I just paid for that site."</summary>
+            <p>"Totally hear you, that always stings. Two questions if you don't mind — when did you have it built, and is the guy who built it still maintaining it for you?" <em>(Almost always: a while ago, and no.)</em> "Yeah, that's the most common situation. Web stuff has a shelf life that nobody warns you about — five years used to last forever, now it's more like two. Not your fault, just how the industry runs."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"My site is fine, I get plenty of work."</summary>
+            <p>"Good — that means the business is solid. The question I'd want to answer is whether the site is helping you or just sitting there neutral. Have you been seeing as many first-time-customer calls as you used to, or is most of your work coming from people who already know you?" <em>(Lets them tell you their own pain.)</em></p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"How is yours different from what I have?"</summary>
+            <p>"Honestly, the underlying skills are the same — what's different is the toolkit. Modern site builders let me do in eight hours what used to take sixty, and the result loads twice as fast on phones. So you're getting current tech without paying current prices."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"What was wrong with my old site?"</summary>
+            <p>"Nothing was wrong with it for the time it was built. Phones changed everything — sites that were good for desktop in 2015 just aren't speaking the same language Google does now. It's not a quality issue, it's a vintage issue."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"Why are you cheaper than what I paid before?"</summary>
+            <p>"The hourly work is shorter. I'm not skipping anything — the tools are just better than they were when you bought your last one. Same way a plumber today does in a half hour what used to take two."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"Send me a proposal."</summary>
+            <p>"Sure — give me 24 hours. Quick question to make the proposal sharper: what's the one thing on your current site that drives you crazy when you look at it?" <em>(They'll always have an answer. Use it as the headline of your proposal.)</em></p>
+          </details>
+        </section>
+
+        <section class="script-section">
+          <h3>The mockup gift (closes 30%+)</h3>
+          <p>Before the call, build a quick visual of how their refreshed site would look — same logo, same name, modernized layout. At the end of the call:</p>
+          <blockquote>
+            "Tell you what — let me put together a quick visual showing how a refreshed version would look while keeping your branding. I'll text it over later today, no pressure, no follow-up unless you reach back out. Worst case you've got a free reference for whenever you do decide to update. Sound fair?"
+          </blockquote>
+          <p class="script-note">Framed as a gift, not "I already assumed you needed help." Owners who'd never spend $400 hypothetically will spend $400 to fix the version of their business they just saw.</p>
+        </section>
+
+        <section class="script-section script-dont">
+          <h3>Tonal swaps — say this, not that</h3>
+          <ul>
+            <li><strong>Not "your old site"</strong> → "your current site"</li>
+            <li><strong>Not "outdated"</strong> → "from the desktop era" / "built before mobile took over"</li>
+            <li><strong>Not "broken"</strong> → "due for a refresh"</li>
+            <li><strong>Not "losing customers"</strong> → "missing some calls you'd otherwise be getting"</li>
+            <li><strong>Not "your competitors are beating you"</strong> → "some businesses in your area refreshed last year and started showing up higher"</li>
+            <li><strong>Not "rebuild" / "redo"</strong> → "tune-up" / "refresh" / "modernize"</li>
+            <li><strong>Not "it hasn't kept up"</strong> → "the rules changed around it"</li>
+          </ul>
+        </section>
+        </div><!-- /existing sub-pane -->
+      </article>
+
+      <!-- ============================================================ -->
+      <!-- Script: SEO Services -->
+      <!-- ============================================================ -->
+      <article class="script-card hidden" data-script-pane="seo">
+        <header class="script-head">
+          <h2>Cold call — SEO Services</h2>
+          <p class="script-tagline">For local businesses ranking on page 2-3 of Google. Lead with the lost calls, not the algorithm.</p>
+        </header>
+
+        <section class="script-section">
+          <h3>1. Opener <span class="script-time">10 sec</span></h3>
+          <blockquote>
+            "Hey, is the owner around? Tell them it's <em>[Your name] from [Your company]</em> — I'll be quick."
+          </blockquote>
+          <p class="script-note">Same rule as every cold call — no "How are you today?" Get past the gatekeeper by sounding like someone they already know.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>2. Hook <span class="script-time">20 sec</span></h3>
+          <blockquote>
+            "Hey [Name], real quick — I help local <em>[contractors / dentists / law firms]</em> in <em>[your city]</em> show up higher when someone Googles their service. I just checked — when I search '<em>[their service] near me</em>' from your area, you come up on page two. That's basically invisible. Three of your competitors are above you and they're getting those calls. Got 30 seconds for me to explain what's costing you the ranking?"
+          </blockquote>
+          <p class="script-note">Specific search + specific result = they know you actually looked. "Three competitors above you" creates urgency without naming names yet.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>3. Discovery <span class="script-time">60 sec, only if they bite</span></h3>
+          <blockquote>"Where do most of your new customers come from right now — Google, referrals, or paid ads?"</blockquote>
+          <blockquote>"Got it. And when someone Googles you or your service from scratch — no referral, just cold search — how often does the phone ring from that?"</blockquote>
+          <p class="script-note">If they say "not much" — that IS the problem. If they say "a lot" — pivot to "we can multiply that."</p>
+        </section>
+
+        <section class="script-section">
+          <h3>4. Offer — three things you fix</h3>
+          <blockquote>
+            "There are basically three reasons businesses get stuck on page two. <strong>One</strong> — Google Business Profile isn't optimized, missing categories, no recent posts, photos uploaded once five years ago. <strong>Two</strong> — your site is missing the service-area pages Google wants to see for each town you serve. <strong>Three</strong> — no one's pointing back to you, what we call backlinks. I fix all three. Most clients move from page two to top three within 90 days, and the first call usually pays for the whole thing."
+          </blockquote>
+          <p class="script-note">Three concrete reasons = sounds like a diagnosis, not a sales pitch. "First call pays for the whole thing" is the math owner-operators care about.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>5. Pricing</h3>
+          <blockquote>
+            "<strong>$500 one-time</strong> for the full optimization — Google Business Profile, the service-area pages, the initial backlink push. After that <strong>$200/month</strong> if you want me to keep posting fresh content and building links so you stay ahead. Most guys do month-to-month, no contract, cancel whenever. Sound reasonable?"
+          </blockquote>
+          <p class="script-note">One-time price removes "monthly contract" objection upfront. Optional monthly is recurring revenue without feeling forced.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>6. Objections <span class="script-time">click to expand</span></h3>
+
+          <details class="script-objection">
+            <summary>"I already pay someone for SEO."</summary>
+            <p>"Cool, who are you working with? <em>(Listen.)</em> No knock on them — but if you're on page two right now, something's off. Mind if I do a free 5-minute audit and send it to you? If your current guy is doing it right, the audit will confirm it. If something's missing, you'll know either way. No charge, no follow-up unless you reach out."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"SEO is too slow, I need leads now."</summary>
+            <p>"Totally fair. Honest answer — SEO takes 60-90 days to really move. But the Google Business Profile work I do shows up in 2-3 weeks for local searches. And it's free traffic once it's built. Ads stop the day you stop paying. SEO compounds. The two work great together — most of my clients run a little Google Ads while I build the SEO underneath, then they cut ads once organic kicks in."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"Can you guarantee page one?"</summary>
+            <p>"Nope — and you should run from anyone who does. Google explicitly says no SEO is allowed to guarantee rankings. What I CAN guarantee is the work, and I can show you what page-one looks like for businesses I've worked with. Want me to text you three case studies? You can call them and ask."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I tried SEO before and it didn't work."</summary>
+            <p>"What did you try? <em>(Listen.)</em> Yeah, that's super common — most SEO 'packages' from a few years back were just monthly reporting on stuff that didn't move the needle. The game changed when Google started caring more about real local signals — actual reviews, fresh photos, content that matches what people search. The work I do is in that lane. Different game than what you tried."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I'm getting enough work already."</summary>
+            <p>"That's awesome — means the business is solid. The question I'd ask is: do you want to keep things at this level, or do you want optionality? Because the second you want to scale, raise prices, add a second crew, hire a salesperson — you'll need more inbound. Better to plant that tree now while business is good than to scramble when you need it."</p>
+          </details>
+        </section>
+
+        <section class="script-section">
+          <h3>The "free audit" close</h3>
+          <p>If they won't commit on the call but seem warm:</p>
+          <blockquote>
+            "Tell you what — let me run a free audit on your Google ranking, your competitors, and what's costing you the placement. I'll send it over later today as a one-pager. No pressure, no follow-up unless you reach out. If it's helpful and you want to fix it, we can talk. If not, you've got a free reference."
+          </blockquote>
+          <p class="script-note">Framing it as a gift, not "let me sell you." Owners who'd never spend $500 hypothetically will spend $500 when they see exactly what's broken on a one-pager.</p>
+        </section>
+
+        <section class="script-section script-dont">
+          <h3>Tonal swaps — say this, not that</h3>
+          <ul>
+            <li><strong>Not "you're not ranking"</strong> → "you're coming up on page two, which is basically invisible"</li>
+            <li><strong>Not "your site is bad"</strong> → "Google's missing some signals it wants to see from you"</li>
+            <li><strong>Not "we'll optimize your SEO"</strong> → "we'll fix the three things keeping you off page one"</li>
+            <li><strong>Not "you need backlinks"</strong> → "nobody's pointing back to you yet"</li>
+            <li><strong>Not "guaranteed page one"</strong> → "here's what page one has looked like for businesses we've worked with"</li>
+            <li><strong>Not "SEO is a long game"</strong> → "first results in 2-3 weeks, full ranking in 60-90 days"</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- ============================================================ -->
+      <!-- Script: Graphic Design / Branding -->
+      <!-- ============================================================ -->
+      <article class="script-card hidden" data-script-pane="graphic-design">
+        <header class="script-head">
+          <h2>Cold call — Graphic Design / Branding</h2>
+          <p class="script-tagline">For businesses with a dated or DIY logo. Frame as "looking the part," not "your logo is bad."</p>
+        </header>
+
+        <section class="script-section">
+          <h3>1. Opener <span class="script-time">10 sec</span></h3>
+          <blockquote>
+            "Hey, is the owner around? Tell them it's <em>[Your name] from [Your company]</em> — I'll only take a minute."
+          </blockquote>
+        </section>
+
+        <section class="script-section">
+          <h3>2. Hook <span class="script-time">20 sec</span></h3>
+          <blockquote>
+            "Hey [Name], quick reason for the call. I help local <em>[contractors / restaurants / fitness studios]</em> in <em>[your city]</em> level up the way their brand looks online — logo, business cards, social media graphics, signage, that kind of thing. I came across your business and the work is clearly there, but the brand visuals haven't quite caught up to how big you've gotten. Got 30 seconds for me to explain what I'm seeing?"
+          </blockquote>
+          <p class="script-note">"The work is clearly there" is the compliment. "Hasn't caught up to how big you've gotten" reframes it as growth, not failure. They've outgrown their brand — that's flattering.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>3. Discovery <span class="script-time">60 sec, only if they bite</span></h3>
+          <blockquote>"Quick question — who designed your current logo and how long ago?"</blockquote>
+          <blockquote>"Got it. And when you hand someone a business card or someone scrolls past your Instagram, what's the impression you want them to walk away with?"</blockquote>
+          <p class="script-note">Almost always: "my brother-in-law / my cousin / I made it in Canva five years ago." Then the gap between current visuals and the impression they want is YOUR opening.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>4. Offer — two tiers</h3>
+          <blockquote>
+            "I do two versions. The <strong>essentials package</strong> is logo refresh plus business cards, color palette, and three social media templates — runs <strong>$400</strong>, takes about a week. The <strong>full brand kit</strong> is everything above plus signage layout, vehicle wrap mock-up, letterhead, email signature, and a brand guidelines doc you can hand to anyone else who designs for you — that's <strong>$900</strong>, about two weeks. Both come with unlimited revisions until you love it. Want me to text you a couple recent examples?"
+          </blockquote>
+          <p class="script-note">Two tiers > yes/no question. "Unlimited revisions" kills the biggest design objection ("what if I don't like it"). The "brand guidelines doc" is the upsell that makes the higher tier feel like an asset, not just more files.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>5. Objections <span class="script-time">click to expand</span></h3>
+
+          <details class="script-objection">
+            <summary>"I already have a logo, I don't need a new one."</summary>
+            <p>"Totally — and a lot of my clients say the same thing at first. The question I'd ask is: do customers see it more on your truck, your shirt, your Instagram, your website? Because logos that look fine on a business card sometimes don't translate to a small Instagram thumbnail or a billboard. I can do a free quick mock-up showing how yours holds up across those formats. If it works, great, no need to change. If it doesn't, you'll see what I mean."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I made mine in Canva, it works fine."</summary>
+            <p>"Canva is great for getting started — no shame in that. The thing is, when you're trying to look like a $5 million business and you've got a Canva logo, customers subconsciously price you lower. Higher-end clients judge that stuff fast. Worth a $400 refresh if it lets you charge 10-20% more? That's usually the calculus."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"How much for just a logo?"</summary>
+            <p>"Just a logo on its own is <strong>$250</strong>, but honestly I don't recommend it. A logo without matching business cards, social colors, and a font system means every time you make a flyer or social post it looks like a different company. The $400 essentials package fixes that. But if you really just want the logo, $250 works."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"What if I don't like what you come up with?"</summary>
+            <p>"Built into the price. Unlimited revisions until you love it — I don't take it personally. About 80% of my clients land it in the second round. The 20% who don't, we just keep iterating. You don't pay the final piece until you're happy."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I'm not really a 'branding' guy, I just do the work."</summary>
+            <p>"Totally fair, and I respect that. Here's the thing though — your customers ARE branding-aware whether you are or not. When two contractors quote the same price but one's truck and uniform look sharp and the other looks slapped together, customers pick the sharp one. They can't help it. Branding for tradespeople isn't about ego, it's about closing more of your quotes."</p>
+          </details>
+        </section>
+
+        <section class="script-section">
+          <h3>The free mock-up close</h3>
+          <p>Warm but uncommitted prospect — offer the visual:</p>
+          <blockquote>
+            "Tell you what — let me put together a free quick logo refresh mock-up before any commitment. Same name, same vibe, just a modern take. I'll text it over later today, no follow-up unless you reach back out. If it makes your current one look dated, you'll know. If it doesn't, you've got free art."
+          </blockquote>
+          <p class="script-note">The visual sells itself. Once they see a clean version next to their current one, the gap is undeniable. Don't argue — show.</p>
+        </section>
+
+        <section class="script-section script-dont">
+          <h3>Tonal swaps — say this, not that</h3>
+          <ul>
+            <li><strong>Not "your logo is bad"</strong> → "the brand hasn't caught up to how big you've gotten"</li>
+            <li><strong>Not "outdated"</strong> → "from your early days" / "the original version"</li>
+            <li><strong>Not "amateur"</strong> → "DIY" / "Canva-built"</li>
+            <li><strong>Not "you need a rebrand"</strong> → "a refresh that keeps your name and feel, just polished"</li>
+            <li><strong>Not "professional design"</strong> → "the version of your brand that matches the price you want to charge"</li>
+            <li><strong>Not "trust me, it'll look better"</strong> → "let me text you a quick mock-up, you decide"</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- ============================================================ -->
+      <!-- Script: Social Media Management -->
+      <!-- ============================================================ -->
+      <article class="script-card hidden" data-script-pane="social-media">
+        <header class="script-head">
+          <h2>Cold call — Social Media Management</h2>
+          <p class="script-tagline">For businesses with a stale Instagram or Facebook. Lead with the lost trust signal, not "you should post more."</p>
+        </header>
+
+        <section class="script-section">
+          <h3>1. Opener <span class="script-time">10 sec</span></h3>
+          <blockquote>
+            "Hey, is the owner around? Tell them it's <em>[Your name] from [Your company]</em> — I'll be quick."
+          </blockquote>
+        </section>
+
+        <section class="script-section">
+          <h3>2. Hook <span class="script-time">25 sec</span></h3>
+          <blockquote>
+            "Hey [Name], real quick — I help local <em>[gyms / salons / restaurants / contractors]</em> in <em>[your city]</em> turn their Instagram and Facebook from dead pages into actual lead sources. I checked yours — your last post is from <em>[seven months ago]</em>. That's not a knock — you're busy running the business. But here's what's happening: when a new customer is deciding between you and a competitor, they're checking your social, and a dead feed makes them wonder if you're still open. You're losing customers you don't even know about. Got 30 seconds?"
+          </blockquote>
+          <p class="script-note">Specific stale date = they know you actually looked. "Are you still open" is the killer line — most owners hadn't thought of that interpretation. Reframes "I should post more" as "I'm losing trust silently."</p>
+        </section>
+
+        <section class="script-section">
+          <h3>3. Discovery <span class="script-time">60 sec, only if they bite</span></h3>
+          <blockquote>"What's the main reason you don't post more often — is it time, not knowing what to post, or just not a priority?"</blockquote>
+          <blockquote>"Got it. And what's the goal when you DO post — getting new customers, staying top-of-mind with existing ones, or hiring?"</blockquote>
+          <p class="script-note">Most owners say "time" or "I don't know what to post" — both are sellable. Goal question forces them to articulate what social SHOULD be doing for them. Their answer is your offer angle.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>4. Offer — done-for-you</h3>
+          <blockquote>
+            "Here's what I do. <strong>Twelve posts a month</strong> across Instagram and Facebook — mix of behind-the-scenes shots, customer wins, before/afters, the occasional promo. I write the captions, design the graphics, schedule everything, and respond to comments. You send me one batch of photos per month, or I do a quarterly photoshoot, and I handle the rest. Most clients see their first new-customer DM within the first month. <strong>$400/month</strong>, no contract, cancel any time. Sound reasonable?"
+          </blockquote>
+          <p class="script-note">"Twelve posts" is specific = concrete. "I write the captions, design the graphics" = they don't have to think. "First new-customer DM within the first month" = measurable promise.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>5. Objections <span class="script-time">click to expand</span></h3>
+
+          <details class="script-objection">
+            <summary>"My niece / my employee already does it."</summary>
+            <p>"That's awesome — keep them around for the behind-the-scenes stuff, they know the business. The thing I'd ask is: what's the engagement been like, and are you seeing actual new customers from it? Most owners who tell me 'we have someone' are paying the niece $200 for posts that get 8 likes. I do strategy, design, hashtag research, and respond to comments — different game than your niece scheduling posts. But if it's working, by all means keep it."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"My customers don't use Instagram / Facebook."</summary>
+            <p>"Fair concern. Real answer — your existing customers might not, but new ones are checking. Anyone under 50 doing their first search for a <em>[your service]</em> in your area is going to Google you, find your social, and judge. Even if they don't follow you, the impression they form there decides whether they call. So social isn't a place to 'reach customers' — it's a place to <strong>be checked out</strong>. Different goal."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I don't have time to send you photos every month."</summary>
+            <p>"Cool, then we do a quarterly shoot — I spend two hours on-site, snap a few hundred shots of the work, the crew, the truck, the storefront — gives me three months of content. Most owners hate doing photos but love the result. We do it once, you don't think about it for 90 days."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"$400/month is a lot."</summary>
+            <p>"Totally hear that. Let me ask — what's a customer worth to you? <em>(Wait for number.)</em> So if social brings in even one new <em>[customer / job / member]</em> a month, it pays for itself, right? Most clients see 2-4 new ones per month. Worst case scenario, you cancel after month one if it's not pulling weight. No contract."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I don't want to be on camera / 'cringe' / influencer-y."</summary>
+            <p>"Yeah, nobody wants that. Different lane — I focus on the work, not the owner. Before/after shots, the crew on site, time-lapses, customer reactions. You stay invisible if you want. The work IS the content. Influencer stuff is for influencers, not for businesses that get paid to deliver."</p>
+          </details>
+        </section>
+
+        <section class="script-section">
+          <h3>The "free first week" close</h3>
+          <p>Warm but uncommitted — offer a sample:</p>
+          <blockquote>
+            "Tell you what — I'll mock up your first week of posts before you commit a dollar. Three Instagram posts, three Facebook posts, captions and graphics, ready to publish. I'll send them over by Friday. If you love them, we go monthly. If they're not your vibe, you keep them and use them yourself, no charge. Sound fair?"
+          </blockquote>
+          <p class="script-note">Risk reversal. They get six free posts either way. The likelihood they keep working with you after seeing the quality is high — most owners can't believe how much better professional content looks compared to their phone shots.</p>
+        </section>
+
+        <section class="script-section script-dont">
+          <h3>Tonal swaps — say this, not that</h3>
+          <ul>
+            <li><strong>Not "you should post more"</strong> → "your dead feed makes customers wonder if you're still open"</li>
+            <li><strong>Not "your social is bad"</strong> → "the social isn't matching what the business actually does"</li>
+            <li><strong>Not "you need to be on TikTok"</strong> → "wherever your customers are checking you out — Instagram, Facebook — we make sure it looks alive"</li>
+            <li><strong>Not "you need a content strategy"</strong> → "twelve posts a month, done for you"</li>
+            <li><strong>Not "engagement is down"</strong> → "you're losing trust signals without realizing"</li>
+            <li><strong>Not "you'll go viral"</strong> → "first new-customer DM usually within the first month"</li>
+            <li><strong>Not "social media manager"</strong> → "I handle the social side so you don't have to think about it"</li>
+          </ul>
+        </section>
+      </article>
+
+      <!-- ============================================================ -->
+      <!-- Script: Marketing Agency (Full-service one-stop-shop pitch)  -->
+      <!-- ============================================================ -->
+      <article class="script-card hidden" data-script-pane="marketing-agency">
+        <header class="script-head">
+          <h2>Cold call — Full-Service Marketing Agency</h2>
+          <p class="script-tagline">For owners juggling 3+ vendors (web guy, social girl, SEO person) or doing it all themselves. Sell consolidation and sleep, not "marketing services."</p>
+        </header>
+
+        <section class="script-section">
+          <h3>1. Opener <span class="script-time">10 sec</span></h3>
+          <blockquote>
+            "Hey, is the owner around? Tell them it's <em>[Your name] from [Your company]</em> — I'll be quick."
+          </blockquote>
+        </section>
+
+        <section class="script-section">
+          <h3>2. Hook — frame as relief, not sales <span class="script-time">25 sec</span></h3>
+          <blockquote>
+            "Hey [Name], real quick — I run a small agency that handles the entire marketing side for local <em>[contractors / clinics / restaurants]</em> in <em>[your city]</em>. Website, Google, social, the whole thing — one person, one bill. The reason I called: most owners I talk to are either doing it all themselves at 10pm, or they've got a different freelancer for the site, the social, the SEO, and nobody's actually steering the ship. I take that whole headache off your plate for less than what most of them are paying just for social. Got 60 seconds?"
+          </blockquote>
+          <p class="script-note">"Doing it all themselves at 10pm" — every owner recognizes themselves. "Three freelancers, nobody steering" — the other half recognize themselves. Position price as <em>less than what they pay for ONE piece</em>, not as a premium tier.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>3. Discovery <span class="script-time">60 sec, only if they bite</span></h3>
+          <blockquote>"What's your current setup look like — are you running the marketing yourself, do you have someone, or is it kind of nobody?"</blockquote>
+          <blockquote>"Got it. And out of everything — website, Google reviews, posting on social, ads — which one bugs you the most when you think about it on a Sunday night?"</blockquote>
+          <p class="script-note">The Sunday-night question is the trick. They'll tell you the exact lead-in. "I haven't posted in months" → social. "My site looks like 2014" → web. Use their answer as your offer headline.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>4. Offer — bundled, named, simple</h3>
+          <blockquote>
+            "Here's what I do. Think of it as <strong>your marketing department, outsourced</strong>. One flat monthly fee, no setup, no contract. You get: a refreshed website that actually loads on phones, your Google profile dialed in and reviews flowing, twelve social posts a month across Instagram and Facebook, and a monthly report that shows what's actually working. <strong>$1,200/month, cancel any time</strong>. That's less than hiring a part-timer at $15 an hour, and you get a whole team. Want me to walk you through what the first 30 days would look like?"
+          </blockquote>
+          <p class="script-note">"Outsourced marketing department" sells the role, not the deliverables. The "$15/hr part-timer" anchor reframes $1,200 from "a lot" to "a steal." Always end with a tour question — "walk you through" is lower-stakes than "send a proposal."</p>
+        </section>
+
+        <section class="script-section">
+          <h3>5. Objections <span class="script-time">click to expand</span></h3>
+
+          <details class="script-objection">
+            <summary>"I already have a guy for that."</summary>
+            <p>"That's awesome — what does he handle for you? <em>(Let them answer.)</em> Got it. So you've got the <em>[website piece]</em> covered. What's happening on the <em>[social / Google / ads]</em> side?" <em>(Now you've narrowed it. Pitch only the gap.)</em> "Cool — I can plug in just for that piece, no need to touch what's working. Half my clients started that way, then moved everything over once they saw the difference."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"$1,200 a month is way too much."</summary>
+            <p>"Totally hear that. Let me ask — what's a customer worth to you? <em>(Wait for number.)</em> So if this brings you even <em>[X]</em> extra customers a month, it pays for itself. And just so you have the comparison — most owners I talk to are paying $400 for social, $300 for SEO, $200 for the web guy, and still feel like nothing's coordinated. I'm $1,200 doing all three and actually talking to each other. But — if budget's tight, we can start with just the piece that bugs you the most for $400-500 and grow from there. No pressure."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"My wife / employee handles it."</summary>
+            <p>"That's awesome — keep them on the relationship side, they know the customers. Real question: is doing the marketing taking time away from something that pays better? <em>(Wait.)</em> Yeah, that's the thing — every hour your wife spends figuring out Canva is an hour she's not doing what she's actually great at. I take that off her plate. She still has the final say on everything that goes out."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I tried an agency before, didn't work."</summary>
+            <p>"Hear that a lot. Two questions if you don't mind — was it a big agency or a smaller one, and were you their biggest client or one of fifty? <em>(Almost always: big, and one of fifty.)</em> Yeah, that's the issue. The big agencies sign 50 local businesses, hand you off to a 22-year-old account manager, and you become a checkbox. I work with maybe 15 clients total, by design. You'd be talking to me directly, every time."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"How long until I see results?"</summary>
+            <p>"Honest answer: social and reviews you'll see movement in the first 30 days — more eyeballs, more DMs, more phone calls. Website refresh shows up in your Google rankings around the 60-90 day mark. The marketing-as-a-system thing — where new customers just keep showing up without you thinking about it — that's usually a 4-6 month build. I tell you that upfront because most agencies promise overnight magic and then ghost you when it doesn't hit."</p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"Send me a proposal."</summary>
+            <p>"Sure thing. Give me 24 hours — I'll put together something specific to your business, not a generic template. Quick question to make it sharper: out of everything we talked about, what would make this an easy yes for you?" <em>(They'll tell you the lever. Lead your proposal with that.)</em></p>
+          </details>
+
+          <details class="script-objection">
+            <summary>"I'm too busy to onboard right now."</summary>
+            <p>"That's exactly why people hire me. Onboarding is one 30-minute call — I ask you about the business, your customers, what's working, what you hate. After that you don't think about marketing again unless you want to. Most clients say it actually frees up two or three hours a week they were spending on it themselves."</p>
+          </details>
+        </section>
+
+        <section class="script-section">
+          <h3>The "marketing audit" close (closes 25%+)</h3>
+          <p>Soft yes, high-value, no commitment needed:</p>
+          <blockquote>
+            "Tell you what — let me put together a <strong>free 5-minute marketing audit</strong> for your business. I'll record a quick Loom walking through your website, your Google profile, your social, and your top three competitors. Tell you exactly what's working and what's leaking customers — even if you never hire me. I'll send it over by Friday. Sound fair?"
+          </blockquote>
+          <p class="script-note">Costs you 15 minutes. The Loom does 80% of the selling for you because they're SEEING the problems instead of being told about them. Half the people who agree to the audit hire you within two weeks.</p>
+        </section>
+
+        <section class="script-section">
+          <h3>Industry tweaks</h3>
+          <p><strong>Contractors / home services:</strong> Lead with the "$10,000 job, $1,200/month investment" math. "One signed job pays you back for 8 months of working with me."</p>
+          <p><strong>Med spas / dental / cosmetic:</strong> Lean into reviews and before/afters. "Your industry lives and dies on Google reviews and visible results — both of those are 80% of what I do."</p>
+          <p><strong>Restaurants / hospitality:</strong> Reframe around foot traffic and repeat customers. "Marketing for restaurants isn't ads — it's making sure people thinking about dinner on a Wednesday see your food before they see anyone else's."</p>
+          <p><strong>Local services with no website:</strong> Drop the price floor to <strong>$800/month</strong> and bundle the new website into month one as a "no extra setup fee" sweetener.</p>
+        </section>
+
+        <section class="script-section script-dont">
+          <h3>Tonal swaps — say this, not that</h3>
+          <ul>
+            <li><strong>Not "we offer marketing services"</strong> → "your marketing department, outsourced"</li>
+            <li><strong>Not "full-stack agency"</strong> → "one person, one bill, the whole thing"</li>
+            <li><strong>Not "synergy / strategy / brand"</strong> → "your website, your Google, your social — coordinated"</li>
+            <li><strong>Not "we'll grow your business"</strong> → "more phone calls, more DMs, more booked jobs"</li>
+            <li><strong>Not "performance-based pricing"</strong> → "flat monthly, cancel any time"</li>
+            <li><strong>Not "marketing audit"</strong> (when explaining cost) → "a Loom walkthrough of what's leaking customers"</li>
+            <li><strong>Not "you need branding"</strong> → "the parts your customers see should feel like they belong together"</li>
+            <li><strong>Not "I have packages"</strong> → "one flat fee, no setup, no contract"</li>
+            <li><strong>Not "let me send a proposal"</strong> → "let me record a 5-minute audit"</li>
+          </ul>
+        </section>
+
+        <section class="script-section">
+          <h3>Don't say</h3>
+          <ul>
+            <li>"Can I have 15 minutes to walk you through our offerings?" — feels like a corporate pitch.</li>
+            <li>"We have a great team." — owners hire individuals they trust, not teams they've never met.</li>
+            <li>"Our process is..." — they don't care about process, they care about outcomes.</li>
+            <li>"ROI / KPIs / conversion rate optimization" — agency-jargon, instant signal they're being upsold.</li>
+            <li>"Six-month minimum" — kills the deal in 90% of cold calls. Always offer no-contract first; mention the longer terms ONLY after they say yes.</li>
+            <li>"We're better than [competitor]." — never name competitors. Position by what you do differently, not who you beat.</li>
+          </ul>
+        </section>
+      </article>
+    </section>
+
+    <section id="view-freegame" class="view">
+      <!-- VelosiRunner pane (existing game) -->
+      <div class="freegame-pane" data-pane="runner">
+        <div class="freegame-card">
+          <div class="freegame-scores">
+            <div class="freegame-score-block">
+              <span class="freegame-score-label">SCORE</span>
+              <span class="freegame-score" id="freegame-score">0</span>
+            </div>
+            <div class="freegame-score-divider"></div>
+            <div class="freegame-score-block">
+              <span class="freegame-score-label">HIGH</span>
+              <span class="freegame-score freegame-hi" id="freegame-hi">0</span>
+            </div>
+            <button type="button" class="whack-mute-btn" id="runner-mute" aria-label="Toggle sound" title="Toggle sound">🔊</button>
+          </div>
+          <div class="freegame-canvas-wrap">
+            <canvas id="freegame-canvas" width="800" height="220" tabindex="0"
+                    aria-label="VelosiRunner"></canvas>
+            <div class="freegame-overlay" id="freegame-overlay">
+              <div class="freegame-overlay-title" id="freegame-overlay-title">VelosiRunner</div>
+              <div class="freegame-overlay-sub" id="freegame-overlay-sub">Press Space to start</div>
+            </div>
+          </div>
+          <div class="freegame-help">Press <kbd>Space</kbd> or <kbd>↑</kbd> to jump · <kbd>↓</kbd> to duck</div>
+        </div>
+
+        <div class="freegame-card freegame-leaderboard">
+          <div class="freegame-leaderboard-header">
+            <h2>Leaderboard</h2>
+            <button type="button" class="btn freegame-refresh" id="freegame-refresh" aria-label="Refresh">↻</button>
+          </div>
+          <p class="freegame-leaderboard-hint">Best run by every Velosify CRM user. Beat them.</p>
+          <table class="freegame-leaderboard-table">
+            <thead>
+              <tr>
+                <th class="rank-col">#</th>
+                <th>Player</th>
+                <th class="score-col">Score</th>
+                <th class="when-col">When</th>
+              </tr>
+            </thead>
+            <tbody id="freegame-leaderboard-body">
+              <tr><td colspan="4" class="freegame-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Blackjack pane — Velosify themed, 10-hand session.
+           $10,000 VelosiBucks bankroll, 6-deck shoe, 3:2 blackjack,
+           dealer stands on soft 17 (Vegas Strip rule). -->
+      <div class="freegame-pane" data-pane="blackjack" hidden>
+        <div class="freegame-card bj-card">
+          <div class="bj-header">
+            <div class="bj-stat">
+              <span class="bj-stat-label">Bankroll</span>
+              <span class="bj-stat-value" id="bj-bankroll">$10,000</span>
+            </div>
+            <div class="bj-stat">
+              <span class="bj-stat-label">Hand</span>
+              <span class="bj-stat-value" id="bj-hand-count">1 / 10</span>
+            </div>
+            <div class="bj-stat">
+              <span class="bj-stat-label">Best Session</span>
+              <span class="bj-stat-value" id="bj-best">$10,000</span>
+            </div>
+          </div>
+
+          <div class="bj-rules">6-deck shoe · Blackjack pays 3:2 · Dealer hits soft 17 · Double on any two cards · Resplit up to 4 hands (aces included) · Surrender available</div>
+
+          <div class="bj-table">
+            <div class="bj-side bj-dealer">
+              <div class="bj-side-label">Dealer<span class="bj-side-total" id="bj-dealer-total"></span></div>
+              <div class="bj-cards" id="bj-dealer-cards"></div>
+            </div>
+            <div class="bj-message" id="bj-message">Place your bet to begin.</div>
+            <div class="bj-side bj-player">
+              <div class="bj-side-label">You<span class="bj-side-total" id="bj-player-total"></span></div>
+              <div class="bj-hands" id="bj-player-hands"></div>
+            </div>
+          </div>
+
+          <div class="bj-controls">
+            <div class="bj-bet-row" id="bj-bet-row">
+              <span class="bj-bet-label">Bet</span>
+              <button type="button" class="bj-chip" data-chip="100">+$100</button>
+              <button type="button" class="bj-chip" data-chip="500">+$500</button>
+              <button type="button" class="bj-chip" data-chip="1000">+$1,000</button>
+              <button type="button" class="bj-chip" data-chip="5000">+$5,000</button>
+              <button type="button" class="bj-chip" data-chip="max">Max</button>
+              <button type="button" class="bj-chip bj-chip-clear" data-chip="clear">Clear</button>
+              <span class="bj-bet-current">$<span id="bj-bet-amount">0</span></span>
+            </div>
+            <div class="bj-action-row" id="bj-action-row" hidden>
+              <button type="button" class="btn bj-action bj-action-hit"       id="bj-hit"><span class="bj-action-emoji" aria-hidden="true">🟢</span> Hit</button>
+              <button type="button" class="btn bj-action bj-action-stand"     id="bj-stand"><span class="bj-action-emoji" aria-hidden="true">🔴</span> Stand</button>
+              <button type="button" class="btn bj-action bj-action-double"    id="bj-double"><span class="bj-action-emoji" aria-hidden="true">🚀</span> Double</button>
+              <button type="button" class="btn bj-action bj-action-split"     id="bj-split"><span class="bj-action-emoji" aria-hidden="true">✌️</span> Split</button>
+              <button type="button" class="btn bj-action bj-action-surrender" id="bj-surrender"><span class="bj-action-emoji" aria-hidden="true">🏳️</span> Surrender</button>
+            </div>
+            <div class="bj-insurance-row" id="bj-insurance-row" hidden>
+              <span class="bj-insurance-label">Dealer shows Ace — insurance?</span>
+              <button type="button" class="btn bj-action" id="bj-insurance-yes">Yes ($0)</button>
+              <button type="button" class="btn bj-action" id="bj-insurance-no">No</button>
+            </div>
+          </div>
+          <!-- Pull-quote — editorial style, big decorative purple opening
+               curl behind the italicized line, gradient name, monospace role. -->
+          <figure class="bj-quote">
+            <span class="bj-quote-mark bj-quote-mark-open"  aria-hidden="true">&ldquo;</span>
+            <blockquote class="bj-quote-text">You can only lose money if you quit while you&rsquo;re down.</blockquote>
+            <span class="bj-quote-mark bj-quote-mark-close" aria-hidden="true">&rdquo;</span>
+            <figcaption class="bj-quote-attrib">
+              <span class="bj-quote-name">Nolan Johnson</span>
+              <span class="bj-quote-role">Owner · Velosify</span>
+            </figcaption>
+          </figure>
+        </div>
+
+        <!-- All-time leaderboard — best final bankroll across every
+             Velosify CRM user. Score is the bankroll at the end of a
+             completed 10-hand session. Server only persists improvements. -->
+        <div class="freegame-card freegame-leaderboard">
+          <div class="freegame-leaderboard-header">
+            <h2>Leaderboard</h2>
+            <button type="button" class="btn freegame-refresh" id="bj-leaderboard-refresh" aria-label="Refresh">↻</button>
+          </div>
+          <p class="freegame-leaderboard-hint">Biggest 10-hand session by every Velosify CRM user. Beat them.</p>
+          <table class="freegame-leaderboard-table">
+            <thead>
+              <tr>
+                <th class="rank-col">#</th>
+                <th>Player</th>
+                <th class="score-col">Bankroll</th>
+                <th class="when-col">When</th>
+              </tr>
+            </thead>
+            <tbody id="bj-leaderboard-body">
+              <tr><td colspan="4" class="freegame-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Chess pane — Velosify themed, you vs the computer.
+           Difficulty tuned for beginners (Easy default). -->
+      <div class="freegame-pane" data-pane="chess" hidden>
+        <div class="freegame-card chess-card">
+          <div class="chess-controls">
+            <div class="chess-status" id="chess-status">Your turn (white).</div>
+            <div class="chess-control-row">
+              <label class="chess-difficulty">
+                <span class="chess-difficulty-label">Difficulty</span>
+                <select id="chess-difficulty" class="chess-select">
+                  <option value="easy" selected>Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </label>
+              <button type="button" class="btn chess-btn" id="chess-undo" disabled>Undo</button>
+              <button type="button" class="btn chess-btn" id="chess-hint">💡 Hint</button>
+              <button type="button" class="btn btn-primary chess-btn" id="chess-new">New game</button>
+            </div>
+          </div>
+          <div class="chess-board-wrap">
+            <div class="chess-board" id="chess-board" role="grid" aria-label="Chess board"></div>
+          </div>
+          <div class="chess-side">
+            <div class="chess-captured" aria-label="Captured pieces">
+              <div class="chess-captured-row" id="chess-captured-by-you" title="Pieces you've captured"></div>
+              <div class="chess-captured-row" id="chess-captured-by-cpu" title="Pieces the computer captured"></div>
+            </div>
+            <div class="chess-history" aria-label="Move history">
+              <div class="chess-history-label">Moves</div>
+              <ol class="chess-history-list" id="chess-history-list"></ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-projects" class="view">
+      <!-- Pending share invitations banner (JS-injected) renders above this. -->
+      <div class="projects-section">
+        <div class="projects-section-header">
+          <h2 class="projects-section-title">Solo Projects</h2>
+        </div>
+        <div class="projects-grid" id="projects-grid-owned"></div>
+      </div>
+      <div class="projects-section">
+        <div class="projects-section-header">
+          <h2 class="projects-section-title">Shared Projects</h2>
+          <p class="projects-section-sub">Projects others have shared with you, plus projects you can start as a collaboration.</p>
+        </div>
+        <div class="projects-grid" id="projects-grid-shared"></div>
+      </div>
+    </section>
+
+    <section id="view-users" class="view">
+      <div class="table-wrap">
+        <table class="data-table sortable" id="users-table" data-entity="users">
+          <thead>
+            <tr>
+              <th data-sort="id" data-type="number">ID</th>
+              <th data-sort="username">Username</th>
+              <th data-sort="name">Name</th>
+              <th data-sort="email">Email</th>
+              <th data-sort="phone">Phone</th>
+              <th data-sort="plan_label">Plan</th>
+              <th data-sort="created_at" data-type="date">Created</th>
+              <th data-sort="contact_count" data-type="number">Records</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-referrals" class="view">
+      <div class="settings-section settings-section-referrals-standalone">
+        <p class="referrals-headline" style="margin-top:0">
+          Refer <strong id="ref-required-page">3</strong> Velosify customers and your subscription
+          is <span class="referrals-headline-accent">FREE</span> for as long as they remain active.
+        </p>
+        <p class="referrals-subhead">
+          Share your link and watch your referrals roll in.
+        </p>
+
+        <div class="referral-card" id="referral-card-page">
+          <div class="referral-progress-row">
+            <div>
+              <div class="referral-progress-label">Your Referrals</div>
+              <div class="referral-progress-count">
+                <span id="ref-count-page">0</span>
+                <span class="ref-count-sep">/</span>
+                <span id="ref-required-page-2">3</span>
+                <span class="ref-status-pill" id="ref-status-pill-page" hidden></span>
+              </div>
+            </div>
+            <div class="referral-progress-bar-wrap">
+              <div class="referral-progress-bar"><div class="referral-progress-fill" id="ref-progress-fill-page"></div></div>
+            </div>
+          </div>
+
+          <label class="settings-label" for="ref-link-page" style="margin-top:18px;">Your share link</label>
+          <div class="referral-link-row">
+            <input id="ref-link-page" type="text" readonly value="" />
+            <button type="button" class="btn btn-primary ref-copy-btn-icon" id="ref-copy-btn-page" title="Copy link">
+              <span class="material-symbols-outlined">content_copy</span>
+              <span>Copy</span>
+            </button>
+          </div>
+
+          <!-- Always-visible custom code editor. Type your code, hit Save. -->
+          <div class="referral-edit-row" id="ref-edit-row-page">
+            <div class="referral-edit-prefix">velosify.ai/?ref=</div>
+            <input id="ref-code-input-page" type="text"
+                   placeholder="yourname" autocomplete="off"
+                   maxlength="30" />
+            <button type="button" class="btn btn-primary" id="ref-save-btn-page">Save</button>
+          </div>
+          <p class="settings-hint" id="ref-edit-hint-page" style="margin: 8px 0 0; font-size: 12px;">
+            3–30 characters · lowercase letters, numbers, dashes, underscores · must be unique
+          </p>
+          <p class="settings-hint" id="ref-edit-error-page" hidden style="margin: 8px 0 0; font-size: 12px; color: #fca5a5;"></p>
+
+          <div class="referral-share-row">
+            <a id="ref-share-tweet-page" class="btn btn-sm ref-share-btn" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/>
+              </svg>
+              <span>Tweet it</span>
+            </a>
+            <a id="ref-share-sms-page"   class="btn btn-sm ref-share-btn" target="_blank" rel="noopener">
+              <span class="material-symbols-outlined">sms</span>
+              <span>Text it</span>
+            </a>
+            <a id="ref-share-email-page" class="btn btn-sm ref-share-btn" target="_blank" rel="noopener">
+              <span class="material-symbols-outlined">mail</span>
+              <span>Email it</span>
+            </a>
+          </div>
+
+          <h3 class="settings-subsection-title" style="margin-top:24px;">Your Referrals</h3>
+          <div id="ref-list-page" class="referral-list">
+            <p class="settings-hint" id="ref-empty-page">No referrals yet. Share your link above to get started.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-support" class="view">
+      <div class="support-wrap">
+        <form class="panel support-card" id="support-form">
+          <h2>Contact support</h2>
+          <p class="settings-hint">Questions, bugs, issues, or feature ideas? Send a message.</p>
+          <p class="settings-hint">Your account info is attached automatically so there's no need to re-introduce yourself.</p>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="support-subject">Subject</label>
+              <input id="support-subject" type="text" maxlength="200" autocomplete="off" placeholder="Feature Idea" />
+            </div>
+            <div class="field full">
+              <label for="support-message">Message</label>
+              <textarea id="support-message" rows="8" maxlength="10000" required placeholder="What's on your mind?"></textarea>
+            </div>
+          </div>
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-primary" id="support-submit">Send message</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="settings-section settings-section-profile">
+      <div class="settings-grid settings-grid-single">
+        <!-- Single unified profile card: account fields + change-password
+             fields live in the same card. Two <form> elements are nested
+             inside so each Save button still posts to its own endpoint
+             (see profile-form / password-form handlers in app.js). -->
+        <div class="panel settings-card settings-card-profile">
+          <form id="profile-form">
+            <h2>Profile</h2>
+            <div class="form-grid">
+              <div class="field">
+                <label>First name</label>
+                <input id="s-first" type="text" autocomplete="given-name" />
+              </div>
+              <div class="field">
+                <label>Last name</label>
+                <input id="s-last" type="text" autocomplete="family-name" />
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input id="s-email" type="email" autocomplete="email" />
+              </div>
+              <div class="field">
+                <label>Phone</label>
+                <input id="s-phone" type="tel" autocomplete="tel" />
+              </div>
+              <div class="field full">
+                <label>Username (used to sign in)</label>
+                <input id="s-username" type="text" autocomplete="username" required minlength="3" maxlength="40" />
+              </div>
+              <!-- Country selector moved to Lead Generator → it lives where
+                   you actually use it. Stored value still flows via /api/me. -->
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save profile</button>
+            </div>
+          </form>
+
+          <!-- Divider between Profile and Change Password inside the same card. -->
+          <div class="settings-card-divider"></div>
+
+          <form id="password-form">
+            <h2>Change password</h2>
+            <div class="form-grid">
+              <div class="field full">
+                <label>Current password</label>
+                <input id="s-current-pw" type="password" autocomplete="current-password" required />
+              </div>
+              <div class="field">
+                <label>New password</label>
+                <input id="s-new-pw" type="password" autocomplete="new-password" minlength="8" required />
+              </div>
+              <div class="field">
+                <label>Confirm new password</label>
+                <input id="s-confirm-pw" type="password" autocomplete="new-password" minlength="8" required />
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Update password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      </div><!-- /settings-section-profile -->
+
+      <div class="settings-section settings-section-api-keys">
+      <div class="settings-grid settings-grid-single">
+        <!-- API Keys lives in its own Settings sub-section now (sidebar:
+             Settings → API Keys). Google Places + Twilio Lookup credentials. -->
+        <div class="panel settings-card api-keys-card">
+          <h2>API Keys</h2>
+          <p class="settings-hint">Bring your own credentials so usage bills to your own accounts. Optional — when blank, Velosify falls back to defaults where available.</p>
+
+          <!-- Google Places API key -->
+          <div class="api-key-row">
+            <div class="api-key-meta">
+              <div class="api-key-name">Google Places API <span class="api-key-status" id="places-key-status">Loading…</span></div>
+              <div class="api-key-desc">Powers Lead Generator <strong>Pro</strong> mode — up to <strong>18,000 free scrapes per month</strong> directly from Google, no cap from us. <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Get a key →</a></div>
+            </div>
+            <div class="api-key-actions">
+              <button type="button" class="btn btn-sm" id="places-key-edit-btn">Add key</button>
+              <button type="button" class="btn btn-sm btn-danger-soft" id="places-key-remove-btn" hidden>Remove</button>
+            </div>
+          </div>
+          <div class="api-key-edit" id="places-key-edit" hidden>
+            <input id="places-key-input" type="text" placeholder="AIzaSy…" autocomplete="off" />
+            <div class="api-key-edit-actions">
+              <button type="button" class="btn" id="places-key-cancel">Cancel</button>
+              <button type="button" class="btn btn-primary" id="places-key-save">Save</button>
+            </div>
+          </div>
+
+          <div class="api-key-divider"></div>
+
+          <!-- Twilio Lookup credentials -->
+          <div class="api-key-row">
+            <div class="api-key-meta">
+              <div class="api-key-name">Twilio Lookup <span class="api-key-status" id="twilio-key-status">Loading…</span></div>
+              <div class="api-key-desc">Used by <strong>Verify Mobiles</strong> on the Contacts page ($0.005 per lookup). New Twilio accounts get $15.50 trial credit (~3,000 verifications) before paying. <a href="https://www.twilio.com/console" target="_blank" rel="noopener">Get credentials →</a></div>
+            </div>
+            <div class="api-key-actions">
+              <button type="button" class="btn btn-sm" id="twilio-key-edit-btn">Add credentials</button>
+              <button type="button" class="btn btn-sm btn-danger-soft" id="twilio-key-remove-btn" hidden>Remove</button>
+            </div>
+          </div>
+          <div class="api-key-edit" id="twilio-key-edit" hidden>
+            <input id="twilio-sid-input" type="text" placeholder="Account SID" autocomplete="off" />
+            <input id="twilio-token-input" type="text" placeholder="Auth Token" autocomplete="off" />
+            <div class="api-key-edit-actions">
+              <button type="button" class="btn" id="twilio-key-cancel">Cancel</button>
+              <button type="button" class="btn btn-primary" id="twilio-key-save">Save</button>
+            </div>
+          </div>
+
+          <div class="api-key-divider"></div>
+
+          <!-- Power Dialer phone — both the bridge target (where Twilio rings
+               the user) AND the caller ID shown to the prospect. One number,
+               two jobs. Use a separate cold-call cell here; your personal
+               Profile phone is left alone. -->
+          <div class="api-key-row">
+            <div class="api-key-meta">
+              <div class="api-key-name">Power Dial Phone <span class="api-key-status" id="caller-id-status">Loading…</span></div>
+              <div class="api-key-desc">Twilio rings <strong>this</strong> number when you Power Dial, and prospects see <strong>this</strong> number on their caller ID. Use your cold-call cell, not your personal one. Must be verified in your Twilio console (<a href="https://console.twilio.com/us1/develop/phone-numbers/manage/verified" target="_blank" rel="noopener">Verified Caller IDs →</a>). Leave blank to use your profile phone for both.</div>
+            </div>
+            <div class="api-key-actions">
+              <button type="button" class="btn btn-sm" id="caller-id-edit-btn">Set number</button>
+              <button type="button" class="btn btn-sm btn-danger-soft" id="caller-id-remove-btn" hidden>Remove</button>
+            </div>
+          </div>
+          <div class="api-key-edit" id="caller-id-edit" hidden>
+            <input id="caller-id-input" type="tel" placeholder="+13135551234" autocomplete="off" />
+            <div class="api-key-edit-actions">
+              <button type="button" class="btn" id="caller-id-cancel">Cancel</button>
+              <button type="button" class="btn btn-primary" id="caller-id-save">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div><!-- /settings-section-api-keys -->
+
+      <div class="settings-section settings-section-billing">
+      <div class="settings-grid">
+        <div class="panel settings-card" id="billing-panel">
+          <h2>Billing</h2>
+          <p class="settings-hint" id="billing-summary">Loading billing info…</p>
+          <div id="billing-card-display" class="billing-card-display" hidden>
+            <div class="billing-card-row">
+              <span class="billing-card-label">Card on file</span>
+              <span class="billing-card-value">
+                <span id="billing-card-brand">—</span>
+                ••••&nbsp;<span id="billing-card-last4">----</span>
+              </span>
+            </div>
+            <div class="billing-card-row">
+              <span class="billing-card-label">Expires</span>
+              <span class="billing-card-value" id="billing-card-exp">--/--</span>
+            </div>
+            <div class="billing-card-row">
+              <span class="billing-card-label">Plan</span>
+              <span class="billing-card-value" id="billing-plan">$49/month</span>
+            </div>
+            <div class="billing-card-row">
+              <span class="billing-card-label">Status</span>
+              <span class="billing-card-value" id="billing-status">—</span>
+            </div>
+            <div class="billing-card-row" id="billing-renewal-row" hidden>
+              <span class="billing-card-label" id="billing-renewal-label">Next renewal</span>
+              <span class="billing-card-value" id="billing-renewal">—</span>
+            </div>
+          </div>
+          <div class="settings-actions billing-actions-row">
+            <button type="button" class="btn btn-primary" id="billing-update-btn">Update card</button>
+            <button type="button" class="btn btn-success" id="billing-resume-membership-btn" hidden>Resume membership</button>
+            <button type="button" class="btn btn-danger" id="billing-cancel-membership-btn">Cancel membership</button>
+          </div>
+
+          <!-- Inline update-card form. Hidden until "Update card" is clicked.
+               Mounts a Stripe Payment Element so the user never leaves
+               Settings to swap their card. -->
+          <div id="billing-update-form" class="billing-update-form" hidden>
+            <div class="billing-update-divider"></div>
+            <div class="billing-update-label">New card details</div>
+            <div id="billing-card-element" class="billing-card-element"></div>
+            <div id="billing-card-error" class="billing-card-error" hidden></div>
+            <div class="billing-update-buttons">
+              <button type="button" class="btn btn-danger" id="billing-cancel-btn">Cancel</button>
+              <button type="button" class="btn btn-primary" id="billing-save-btn">Save card</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- "Want it for free?" promo — sits in the right column of the
+             same settings-grid as the billing card so the two are
+             always equal-width and the grid's gap handles spacing. -->
+        <button type="button" class="referral-promo-card" id="ref-promo-cta" aria-label="Open Referral Program">
+          <div class="referral-promo-glow" aria-hidden="true"></div>
+          <div class="referral-promo-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">redeem</span>
+          </div>
+          <div class="referral-promo-body">
+            <div class="referral-promo-headline">Want Velosify for <span class="referral-promo-accent">FREE</span>?</div>
+            <div class="referral-promo-sub">
+              Refer 3 customers and your subscription is free for as long as they remain active.
+            </div>
+          </div>
+          <div class="referral-promo-cta">
+            <span>Learn how</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </div>
+        </button>
+      </div>
+      </div><!-- /settings-section-billing -->
+    </section>
+
+    <footer class="app-footer">
+      <a href="/" class="v2-brand app-footer-brand" aria-label="Velosify CRM home">
+        <img class="v2-rocket" src="/static/velosify-logo.svg?v=9" alt="" aria-hidden="true" />
+        <span class="v2-brand-word">VELOSIFY</span>
+      </a>
+      <div class="app-footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
+        <a href="/refund-policy">Refunds</a>
+      </div>
+      <div class="app-footer-copy-block">
+        <div class="app-footer-copy">© 2026 VELOSIFY CRM. PRECISION ENGINEERED.</div>
+        <div class="app-footer-credit">Built by <span class="app-footer-credit-name">Nolan Johnson</span></div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ============================================================
+       Power Dialer activation modal
+       ============================================================ -->
+  <div id="pd-modal" class="modal hidden">
+    <div class="modal-card pd-modal-card">
+      <div class="modal-header">
+        <h2 class="pd-modal-title"><span class="pd-modal-bolt" aria-hidden="true">⚡</span> Power Dialer</h2>
+        <button class="icon-btn" id="pd-modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="pd-modal-lead">Bridge-call through your visible contacts at speed. Velosify rings <em>your</em> phone, then patches each prospect in one-by-one. Keyboard-driven so you stay in flow.</p>
+
+        <div class="pd-modal-grid">
+          <div class="pd-modal-card-inner pd-modal-warn">
+            <div class="pd-modal-icon" aria-hidden="true">⚠️</div>
+            <div>
+              <h3>Twilio trial accounts won't work</h3>
+              <p>Twilio's free trial plays a "press any key" message before every bridge AND rejects any outbound call to a non-verified number. Both make cold calling impossible.</p>
+              <p><strong>Fix:</strong> upgrade your Twilio account with the minimum <strong>$20</strong> top-up. Your existing trial credit converts, so you start with <strong>~$34</strong> usable.</p>
+              <a href="https://console.twilio.com/us1/billing/upgrade" target="_blank" rel="noopener" class="pd-modal-link">Upgrade Twilio →</a>
+            </div>
+          </div>
+
+          <div class="pd-modal-card-inner pd-modal-good">
+            <div class="pd-modal-icon" aria-hidden="true">💰</div>
+            <div>
+              <h3>Zero markup on Twilio</h3>
+              <p>We don't take a cut. Every cent you spend on Voice + Lookups goes directly to Twilio at their published rates.</p>
+              <p>Roughly <strong>$0.014/minute × 2 legs</strong> per bridged call — about <strong>$0.04 per 90-second call</strong>. Compare to Close ($0.07/min markup) or HubSpot ($0.10+).</p>
+              <p class="pd-modal-mini">Live spend meter shows every penny during the session.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pd-modal-queue-info">
+          <div class="pd-modal-queue-line">
+            <span class="pd-modal-queue-label">Queue:</span>
+            <strong id="pd-modal-queue-count">0</strong>
+            <span>contact<span id="pd-modal-queue-plural">s</span> from your current view</span>
+          </div>
+          <div class="pd-modal-queue-sub" id="pd-modal-queue-sub">Use the line-type and list filters in Contacts to narrow the queue before activating.</div>
+        </div>
+
+        <!-- At-a-glance config dots: tap either to scroll to the matching
+             setup card below or open Settings → API Keys for fuller config. -->
+        <div class="pd-modal-config" id="pd-modal-config">
+          <a class="pd-modal-config-item" href="#pd-modal-twilio-card">
+            <span class="pd-config-dot" id="pd-cfg-twilio-dot-modal"></span>
+            <span id="pd-cfg-twilio-label-modal">Twilio credentials</span>
+          </a>
+          <a class="pd-modal-config-item" href="#pd-modal-phone-card">
+            <span class="pd-config-dot" id="pd-cfg-phone-dot-modal"></span>
+            <span id="pd-cfg-phone-label-modal">Power Dial Phone</span>
+          </a>
+        </div>
+
+        <!-- Inline Power Dial Phone config — mirrors the API Keys section
+             so users can set/replace/remove the cold-call number without
+             leaving the modal. Updates the activation dots live the moment
+             it saves. Same /api/me/caller-id endpoint as Settings. -->
+        <div class="pd-modal-cfg-card" id="pd-modal-phone-card">
+          <div class="pd-modal-cfg-head">
+            <div>
+              <div class="pd-modal-cfg-title">
+                Power Dial Phone
+                <span class="api-key-status" id="pd-modal-caller-id-status">Loading…</span>
+              </div>
+              <div class="pd-modal-cfg-desc">
+                Twilio rings <strong>this</strong> number when you Power Dial, and prospects see <strong>this</strong> number on their caller ID. Use your cold-call cell, not your personal one. Must be verified in your Twilio console (<a href="https://console.twilio.com/us1/develop/phone-numbers/manage/verified" target="_blank" rel="noopener">Verified Caller IDs →</a>). Leave blank to use your profile phone for both.
+              </div>
+            </div>
+            <div class="pd-modal-cfg-actions">
+              <button type="button" class="btn btn-sm" id="pd-modal-caller-id-edit-btn">Set number</button>
+              <button type="button" class="btn btn-sm btn-danger-soft" id="pd-modal-caller-id-remove-btn" hidden>Remove</button>
+            </div>
+          </div>
+          <div class="pd-modal-cfg-edit" id="pd-modal-caller-id-edit" hidden>
+            <input id="pd-modal-caller-id-input" type="tel" placeholder="+13135551234" autocomplete="off" />
+            <div class="pd-modal-cfg-edit-actions">
+              <button type="button" class="btn" id="pd-modal-caller-id-cancel">Cancel</button>
+              <button type="button" class="btn btn-primary" id="pd-modal-caller-id-save">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer pd-modal-footer">
+        <button type="button" class="btn btn-ghost" id="pd-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-power-dialer pd-modal-activate" id="pd-modal-activate" disabled>
+          <span class="pd-bolt" aria-hidden="true">⚡</span>
+          <span>Start</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Dialer active-session banner — appears above the Contacts table when a session is live -->
+  <div id="pd-banner" class="pd-banner" hidden>
+    <div class="pd-banner-title-block">
+      <div class="pd-banner-eyebrow">⚡ ACTIVE SESSION</div>
+      <h2 class="pd-banner-title" id="pd-banner-title">Cold Call Session</h2>
+    </div>
+    <div class="pd-banner-progress">
+      <div class="pd-progress-text">
+        <span class="pd-progress-pos"><span id="pd-position">1</span> of <span id="pd-total">0</span></span>
+        <span class="pd-cost-meter" id="pd-cost-meter" title="Estimated Twilio Voice spend this session">
+          <span class="pd-cost-label">SPEND</span>
+          <span class="pd-cost-value" id="pd-cost-value">$0.00</span>
+        </span>
+      </div>
+      <div class="pd-progress-track">
+        <div class="pd-progress-fill" id="pd-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <!-- End Session button removed — it's already in the toolbar (red glow)
+         and in the action panel (⏹ STOP), so a third place was redundant. -->
+  </div>
+
+  <!-- Admin Panel: Create user modal -->
+  <div id="create-user-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Create user</h2>
+        <button class="icon-btn" id="create-user-close" type="button" aria-label="Close">×</button>
+      </div>
+      <form id="admin-create-user-form">
+        <div class="modal-body">
+          <p class="settings-hint" style="margin-top:0">Add a new CRM account. Check <em>"Grandfather (free forever)"</em> to skip card verification and the paywall — useful for early customers, comp accounts, or your own team.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label>Username</label>
+              <input id="cu-username" type="text" autocomplete="off" minlength="3" maxlength="40" required />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input id="cu-password" type="text" autocomplete="off" minlength="6" required />
+            </div>
+            <div class="field">
+              <label>First name</label>
+              <input id="cu-first" type="text" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>Last name</label>
+              <input id="cu-last" type="text" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input id="cu-email" type="email" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input id="cu-phone" type="tel" autocomplete="off" />
+            </div>
+            <div class="field full">
+              <label class="admin-grandfather-toggle">
+                <input id="cu-grandfather" type="checkbox" checked />
+                Grandfather (free forever — skip card verification &amp; paywall)
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" id="create-user-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create user</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal host -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title">New</h2>
+        <button class="icon-btn" id="modal-close">×</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn" id="modal-cancel">Cancel</button>
+        <button class="btn btn-danger hidden" id="modal-delete">Delete</button>
+        <button class="btn btn-primary" id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column visibility picker -->
+  <div id="column-picker-backdrop" class="column-picker-backdrop hidden"></div>
+  <div id="column-picker" class="column-picker hidden" role="dialog" aria-labelledby="column-picker-title" aria-modal="true">
+    <div class="column-picker-header">
+      <h3 id="column-picker-title">Show columns</h3>
+      <button class="icon-btn" id="column-picker-close" aria-label="Close">×</button>
+    </div>
+    <div class="column-picker-hint">
+      Toggle which columns appear in the contacts table. Drag the headers to reorder, drag the right edge to resize. Settings are saved per project.
+    </div>
+    <div id="column-picker-list" class="column-picker-list"></div>
+    <div class="column-picker-footer">
+      <button class="btn btn-ghost" id="column-picker-reset" type="button">Reset to default</button>
+      <button class="btn btn-primary" id="column-picker-done" type="button">Done</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="/static/landing-bg.js?v=1"></script>
+  <!-- chess.js: legal moves, check/checkmate, castling, en passant, promotion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="/static/app.js?v=171"></script>
+</body>
+</html>

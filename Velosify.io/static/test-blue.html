@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Velosify CRM</title>
+<meta name="description" content="The only CRM that finds leads for you. Scrape Google Maps for leads, identify mobile lines, track every call, close more deals." />
+<meta property="og:title" content="Velosify CRM">
+<meta property="og:description" content="The only CRM that finds leads for you. Scrape Google Maps for leads, identify mobile lines, track every call, close more deals.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://velosify.ai/">
+<meta property="og:image" content="https://velosify.ai/static/og-image.png?v=7">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://velosify.ai/static/og-image.png?v=7">
+<link rel="canonical" href="https://velosify.ai/" />
+<!-- Favicons: PNG variants are what Google search results use. SVG
+     comes first because modern browsers prefer it for the tab icon
+     (scales perfectly), but Google's image crawler grabs the PNG
+     listed with size hints. .ico is the legacy fallback. -->
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=2" />
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png?v=2" />
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png?v=2" />
+<link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png?v=2" />
+<link rel="icon" type="image/png" sizes="192x192" href="/static/favicon-192.png?v=2" />
+<link rel="icon" type="image/png" sizes="512x512" href="/static/favicon-512.png?v=2" />
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=2" />
+<link rel="shortcut icon" href="/static/favicon.ico?v=2" />
+<meta name="theme-color" content="#02040a" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=Hanken+Grotesk:wght@400;500&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Shared sitewide styles (provides .shiny-cta button + color tokens) -->
+<link rel="stylesheet" href="/static/styles.css?v=124" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-tertiary-fixed-variant": "#543589",
+          "inverse-primary": "#6d3bd7",
+          "void-black": "#02040a",
+          "on-background": "#e0e2ee",
+          "on-surface-variant": "#cbc3d7",
+          "outline": "#958ea0",
+          "surface-container-lowest": "#0a0e16",
+          "kinetic-red": "#EF4444",
+          "stellar-lavender": "#C4A3FF",
+          "plasma-purple": "#1E3A8A",
+          "deep-space": "#050B18",
+          "nebula-blue": "#0369A1",
+          "on-surface": "#e0e2ee"
+        },
+        borderRadius: { DEFAULT: "0.125rem", lg: "0.4rem", xl: "0.75rem", full: "1rem" },
+        spacing: {
+          "container-max": "1440px",
+          "stack-xl": "80px",
+          "gutter": "24px",
+          "margin-safe": "24px"
+        },
+        fontFamily: {
+          "display-xl": ["Sora"],
+          "headline-md": ["Sora"],
+          "label-sm": ["JetBrains Mono"],
+          "body-md": ["Hanken Grotesk"],
+          "body-lg": ["Hanken Grotesk"]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  /* Both html AND body need overflow-x: hidden — iOS Safari ignores
+     it on body alone when absolute-positioned children (nebula glows)
+     extend beyond viewport. */
+  html { overflow-x: hidden; }
+  /* Reset the sidebar-grid layout that styles.css applies to <body>for the
+     main CRM app. The landing page is a single-column marketing layout —
+     no fixed sidebar, no 240px column on the left. */
+  body {
+    display: block !important;
+    grid-template-columns: none !important;
+    background-color: #02040a;
+    color: #e0e2ee;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    max-width: 100vw;
+    font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  .hero-text-word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .hero-text-word.visible { opacity: 1; transform: translateY(0); }
+  /* Each hero line sits on one row with natural word spacing. On mobile
+     a small JS pass measures the line's natural width at the inherited
+     font-size and scales font-size up so the text fills the container —
+     giving each line that "wide cinematic" full-bleed feel. Desktop keeps
+     the inherited Tailwind sizing untouched. */
+  .hero-line {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    width: 100%;
+    gap: 0.28em;
+    white-space: nowrap;
+  }
+  /* Consecutive accent words share one wrapper so the plasma-purple →
+     nebula-blue gradient runs as a single ribbon across the whole
+     phrase. background-clip:text on the wrapper itself doesn't paint
+     through descendants reliably (the inner .hero-text-word spans use
+     display:inline-block for their translateY animation, which creates
+     a new painting context that ignores the wrapper's clipped fill).
+     Instead, each inner word carries its OWN background-clip:text but
+     the gradient image is sized to the full wrapper width and offset
+     so each word samples its correct slice of one continuous
+     gradient. JS sets --accent-width and --accent-offset after layout
+     (and re-runs after fitHeroLines scales the font-size). */
+  .hero-accent-group {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.28em;
+  }
+  .hero-accent-group .hero-text-word {
+    background-image: none !important;
+    background-color: transparent !important;
+    -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+    color: #2563EB !important;
+    -webkit-text-fill-color: #2563EB !important;
+    /* IMPORTANT: no -webkit-text-stroke — it paints inside glyphs
+       (cross of A, gap of O, etc.) and looks messy. text-shadow
+       stays OUTSIDE the letter outline only. */
+    -webkit-text-stroke: 0 !important;
+    text-shadow:
+      /* 8-way outer outline (thicker edge, ~1.5px) */
+      -1px -1px 0 rgba(186, 230, 253, 0.70),
+       1px -1px 0 rgba(186, 230, 253, 0.70),
+      -1px  1px 0 rgba(186, 230, 253, 0.70),
+       1px  1px 0 rgba(186, 230, 253, 0.70),
+       0   -2px 0 rgba(186, 230, 253, 0.55),
+       2px   0  0 rgba(186, 230, 253, 0.55),
+       0    2px 0 rgba(186, 230, 253, 0.55),
+      -2px   0  0 rgba(186, 230, 253, 0.55),
+      /* atmospheric glow halo behind */
+      0 0 10px rgba(147, 197, 253, 0.50),
+      0 0 24px rgba(96,  165, 250, 0.35),
+      0 0 48px rgba(59,  130, 246, 0.20) !important;
+    filter: none !important;
+    background-size: auto !important;
+    background-position: 0 0 !important;
+  }
+  .glow-accent { filter: drop-shadow(0 0 15px rgba(30, 64, 175, 0.4)); }
+  .nebula-glow {
+    position: fixed;            /* follows viewport so the glow is present on every section */
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: 0;
+    opacity: 0.15;
+    pointer-events: none;
+  }
+  /* ---- Pricing card animated border (rotating conic-gradient beam) ---- */
+  @property --pricing-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  .pro-border {
+    position: relative;
+    padding: 2px;
+    /* Base layer = dim purple→blue gradient (visible when conic is "off")
+       Top layer = rotating conic gradient that sweeps two shine beams
+       around the card edge. */
+    background:
+      linear-gradient(135deg, rgba(30, 64, 175, 0.35), rgba(2, 132, 199, 0.35)),
+      conic-gradient(
+        from var(--pricing-angle),
+        transparent 0deg,
+        #c4a3ff 30deg,
+        #1e3a8a 60deg,
+        transparent 110deg,
+        transparent 200deg,
+        #93c5fd 230deg,
+        #0369a1 260deg,
+        transparent 310deg
+      );
+    background-blend-mode: lighten;
+    animation: pricing-rotate 5.5s linear infinite;
+    box-shadow:
+      0 30px 70px -10px rgba(30, 64, 175, 0.45),
+      0 10px 30px -5px rgba(2, 132, 199, 0.30);
+    transition: box-shadow 0.4s, transform 0.4s;
+  }
+  .pro-border:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 40px 90px -10px rgba(30, 64, 175, 0.6),
+      0 14px 40px -5px rgba(2, 132, 199, 0.45);
+  }
+  @keyframes pricing-rotate {
+    to { --pricing-angle: 360deg; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pro-border { animation: none; }
+  }
+  .pro-inner {
+    /* Subtle plasma-purple → nebula-blue diagonal tint sitting over a
+       slightly-lifted dark navy. Opaque so the rotating conic gradient
+       on .pro-border doesn't bleed through, but tinted enough to read
+       as "premium / on-brand" rather than pure black. */
+    background:
+      linear-gradient(135deg, rgba(30, 64, 175, 0.14), rgba(2, 132, 199, 0.14)),
+      #0a0d16;
+    height: 100%;
+    width: 100%;
+    border-radius: calc(2.5rem - 2px);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---- Primary "Get Started" CTA — matches nav button style ----
+     Dim plasma-purple fill, sharp purple border, JetBrains Mono uppercase.
+     Wider footprint than the nav variant since pricing card needs presence. */
+  .pricing-cta {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px 32px;
+    border-radius: 999px;
+    background: rgba(30, 64, 175, 0.22);
+    border: 1px solid rgba(30, 64, 175, 0.55);
+    color: white;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+    box-shadow: 0 0 24px rgba(30, 64, 175, 0.18);
+  }
+  .pricing-cta:hover {
+    background: rgba(30, 64, 175, 0.42);
+    border-color: rgba(30, 64, 175, 0.85);
+    transform: translateY(-1px);
+    box-shadow: 0 0 36px rgba(30, 64, 175, 0.42);
+  }
+  .pricing-cta:active { transform: translateY(0); }
+
+  /* ---- Brand ticker (two rows, infinite scroll in opposite directions) ---- */
+  .ticker-wrap {
+    overflow: hidden;
+    /* Generous fade on both edges so logos drift in and out smoothly
+       instead of slamming against a hard cutoff. */
+    mask-image: linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%);
+  }
+  .ticker-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 56px;
+    padding-right: 56px;
+    width: max-content;
+    animation: ticker-scroll 45s linear infinite;
+  }
+  /* Reverse-direction track (left-to-right) just plays the same keyframe backwards. */
+  .ticker-track-reverse {
+    animation-direction: reverse;
+  }
+  .ticker-track:hover { animation-play-state: paused; }
+  /* The track is exactly 2 copies of the chip set. Translating by -50%
+     of the track width lands the duplicate set's first chip exactly
+     where the original set's first chip was — perfect seamless loop. */
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  /* No more bubble — just the logo + name floating in space. */
+  .ticker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    /* Muted on purpose — the ticker should hum quietly in the background
+       alongside the other muted body copy, not punch through. */
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .ticker-chip img {
+    width: 26px;
+    height: 26px;
+    display: block;
+    opacity: 0.5;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-track { animation: none; }
+  }
+
+  /* Pricing-section tint: gives the Starter and Scale cards the same
+     plasma-purple → nebula-blue wash as the Pro card's .pro-inner so
+     all three tiers feel like a unified set. Scoped to #pricing so
+     the feature-section glass cards stay neutral. */
+  #pricing .glass-card {
+    background:
+      linear-gradient(135deg, rgba(30, 64, 175, 0.10), rgba(2, 132, 199, 0.10)),
+      rgba(255, 255, 255, 0.02);
+    border-color: rgba(30, 64, 175, 0.22);
+  }
+
+  /* Mobile / desktop visibility helpers — used instead of Tailwind's
+     `hidden md:block` for elements where we want guaranteed control
+     (avoids any edge case where Tailwind's CDN JIT misses the
+     specific class combination). */
+  .desktop-only { display: none; }
+  .mobile-only  { display: block; }
+  @media (min-width: 768px) {
+    .desktop-only { display: block; }
+    .mobile-only  { display: none; }
+  }
+
+  /* FAQ accordion — native <details> with custom chrome.
+     summary: full-width clickable row with question + chevron.
+     body: animated slide-in when item opens. JS enforces single-open
+     accordion behavior (opening one closes all others). */
+  .faq-item {
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .faq-item[open] {
+    border-color: rgba(30, 64, 175, 0.45);
+  }
+  .faq-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    user-select: none;
+  }
+  .faq-summary::-webkit-details-marker { display: none; }
+  .faq-summary h4 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.35;
+  }
+  .faq-chevron {
+    flex-shrink: 0;
+    font-size: 24px;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .faq-item[open] .faq-chevron { transform: rotate(180deg); }
+  .faq-body {
+    padding: 0 28px 24px;
+    animation: faq-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes faq-slide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scroll-triggered reveal: elements start invisible + slightly below,
+     fade up into view when the IntersectionObserver flags them. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* Optional stagger delays — apply to children inside a parent .reveal-group */
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+
+  /* ---- Lead Generator animated demo ---- */
+  .demo-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    z-index: 30;
+    opacity: 0;
+    transition: transform 0.95s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+    filter: drop-shadow(0 4px 12px rgba(30, 64, 175, 0.55));
+  }
+  .demo-cursor.visible { opacity: 1; }
+  .demo-cursor-inner {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.18s ease;
+  }
+  .demo-cursor.clicking .demo-cursor-inner { transform: scale(0.65); }
+  .demo-input-active {
+    background: rgba(30, 64, 175, 0.12) !important;
+    border-color: rgba(30, 64, 175, 0.55) !important;
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.25);
+  }
+  .demo-caret {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: #C4A3FF;
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: demo-blink 0.9s steps(1) infinite;
+  }
+  @keyframes demo-blink {
+    50% { opacity: 0; }
+  }
+  .demo-result {
+    position: absolute;
+    top: calc(100% + 14px);
+    right: 0;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    color: #bbf7d0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+    transition: opacity 0.35s, transform 0.35s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  .demo-result.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  .demo-search-pulse {
+    animation: demo-search-pulse 0.55s ease;
+  }
+  @keyframes demo-search-pulse {
+    0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(30, 64, 175, 0.6); }
+    50%  { transform: scale(0.9); box-shadow: 0 0 0 18px rgba(30, 64, 175, 0); }
+    100% { transform: scale(1); }
+  }
+
+  /* Green completion check beside the "X of 10 identified" counter —
+     hidden by default, pops in when the demo finishes identifying
+     all 10 contacts. */
+  .twilio-progress-check {
+    color: #4ade80;
+    font-size: 14px;
+    opacity: 0;
+    transform: scale(0.4);
+    transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.55));
+  }
+  .twilio-progress-check.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* ---- Revenue Dashboard demo (lower-left feature card) ----
+     Animated KPI counter, bar chart, and rolling activity feed. */
+  .dash-bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(to top,
+      rgba(30, 64, 175, 0.25),
+      rgba(2, 132, 199, 0.7));
+    height: 4%;
+    transition: height 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    min-width: 4px;
+  }
+  .dash-bar.last {
+    background: linear-gradient(to top, #1E3A8A, #0369A1);
+    box-shadow: 0 0 10px rgba(30, 64, 175, 0.45);
+  }
+  .dash-feed-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    font-size: 11px;
+    opacity: 0;
+    transform: translateY(-6px);
+    animation: dash-feed-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .dash-feed-item .dash-feed-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .dash-feed-item .dash-feed-text {
+    color: rgba(255, 255, 255, 0.78);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dash-feed-item .dash-feed-amount {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .dash-feed-item .dash-feed-amount.pos { color: #86efac; }
+  @keyframes dash-feed-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* Reveal-delay-2 — staggers after reveal-delay-1 (Identify Lines card). */
+  .reveal-delay-2 { transition-delay: 0.2s; }
+
+  /* ---- Twilio Line Identification demo ---- */
+  .twilio-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .twilio-row.identified {
+    background: rgba(255, 255, 255, 0.035);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .twilio-avatar {
+    width: 26px; height: 26px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700;
+    color: #958ea0;
+    flex-shrink: 0;
+  }
+  .twilio-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    border: 1px solid;
+    white-space: nowrap;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .twilio-badge .material-symbols-outlined {
+    font-size: 11px;
+    line-height: 1;
+  }
+  .twilio-badge-unknown {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #958ea0;
+  }
+  .twilio-badge-mobile {
+    background: rgba(34, 197, 94, 0.14);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #bbf7d0;
+  }
+  .twilio-badge-landline {
+    background: rgba(2, 132, 199, 0.14);
+    border-color: rgba(2, 132, 199, 0.4);
+    color: #93c5fd;
+  }
+  .twilio-badge-voip {
+    background: rgba(30, 64, 175, 0.14);
+    border-color: rgba(30, 64, 175, 0.4);
+    color: #c4a3ff;
+  }
+  .twilio-badge.flipping {
+    animation: twilio-badge-flip 0.45s cubic-bezier(0.5, 1.6, 0.5, 1);
+  }
+  @keyframes twilio-badge-flip {
+    0%   { transform: scale(0.78); }
+    55%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  .twilio-counter-fill {
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+</style>
+
+
+<style>
+  /* ================================================================
+     V3 THEME — test-blue.html only
+     - Deep midnight base with electric royal-blue accents
+     - Single canonical blue + single canonical glow used everywhere
+     - Subtle, never neon; designed to read clean on bright OLEDs
+     - Live landing untouched
+     ================================================================ */
+
+  :root {
+    /* The V3 palette — one source of truth */
+    --v3-blue-deep:   #1e3a8a;   /* darkest stop (CTA tail / shadows)  */
+    --v3-blue-base:   #1d4ed8;   /* primary brand blue                 */
+    --v3-blue-bright: #3b82f6;   /* mid-stop / hover / accent          */
+    --v3-blue-soft:   #60a5fa;   /* readable blue body / headlines     */
+    --v3-blue-glow:   #93c5fd;   /* highlight stop in gradients        */
+    --v3-cyan-edge:   #38bdf8;   /* gradient tail / cool accent        */
+    /* Single canonical glow — keep subtle so headlines don't scream */
+    --v3-glow:
+      0 0 6px rgba(96, 165, 250, 0.32),
+      0 0 14px rgba(56, 189, 248, 0.18);
+    --v3-glow-strong:
+      0 0 8px rgba(96, 165, 250, 0.42),
+      0 0 20px rgba(56, 189, 248, 0.22);
+  }
+
+  html, body { background: #02061a !important; }
+  body { overflow-x: hidden; position: relative; }
+
+  /* ---------- Aurora background mesh ---------- */
+  body::before {
+    content: "";
+    position: fixed; inset: -10%;
+    z-index: -3;
+    background:
+      radial-gradient(38% 50% at 18% 22%, rgba(29, 78, 216, 0.48),  transparent 70%),
+      radial-gradient(48% 60% at 82% 28%, rgba(15, 23, 80, 0.85),   transparent 75%),
+      radial-gradient(50% 65% at 88% 78%, rgba(8, 15, 50, 0.95),    transparent 72%),
+      radial-gradient(40% 50% at 25% 78%, rgba(59, 130, 246, 0.26), transparent 70%),
+      radial-gradient(30% 40% at 50% 50%, rgba(6, 182, 212, 0.13),  transparent 65%),
+      #02061a;
+    filter: blur(0.5px);
+    animation: v3Aurora 32s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes v3Aurora {
+    0%   { transform: scale(1.00) translate(0%, 0%); }
+    50%  { transform: scale(1.05) translate(-1.5%, 1%); }
+    100% { transform: scale(1.03) translate(2%, -1%); }
+  }
+
+  /* ---------- Blueprint grid overlay ---------- */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    z-index: -2;
+    background-image:
+      linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 35%, transparent 80%);
+            mask-image: radial-gradient(ellipse at center, #000 35%, transparent 80%);
+    animation: v3GridDrift 80s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes v3GridDrift {
+    0%   { background-position: 0 0, 0 0; }
+    100% { background-position: 80px 80px, 80px 80px; }
+  }
+
+  /* ================================================================
+     V3 BLUE TEXT — every blue accent uses the SAME palette + glow,
+     so the page reads as one consistent theme.
+     ================================================================ */
+
+  /* Solid-color blue text classes — used for accent words, badges,
+     ticker stats, etc. */
+  .text-plasma-purple,
+  .text-nebula-blue,
+  .v3-blue {
+    color: var(--v3-blue-soft) !important;
+    text-shadow: var(--v3-glow) !important;
+  }
+
+  /* Gradient text (Tailwind's bg-clip-text trick) — one canonical
+     gradient + same subtle glow on top via drop-shadow. */
+  .text-transparent[class*="bg-clip-text"],
+  .bg-clip-text,
+  [class*="bg-gradient-to"][class*="text-transparent"],
+  .referral-promo-accent {
+    background-image: none !important;
+    background-color: transparent !important;
+    -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+    color: #2563EB !important;
+    -webkit-text-fill-color: #2563EB !important;
+    /* IMPORTANT: no -webkit-text-stroke — it paints inside glyphs
+       (cross of A, gap of O, etc.) and looks messy. text-shadow
+       stays OUTSIDE the letter outline only. */
+    -webkit-text-stroke: 0 !important;
+    text-shadow:
+      /* 8-way outer outline (thicker edge, ~1.5px) */
+      -1px -1px 0 rgba(186, 230, 253, 0.70),
+       1px -1px 0 rgba(186, 230, 253, 0.70),
+      -1px  1px 0 rgba(186, 230, 253, 0.70),
+       1px  1px 0 rgba(186, 230, 253, 0.70),
+       0   -2px 0 rgba(186, 230, 253, 0.55),
+       2px   0  0 rgba(186, 230, 253, 0.55),
+       0    2px 0 rgba(186, 230, 253, 0.55),
+      -2px   0  0 rgba(186, 230, 253, 0.55),
+      /* atmospheric glow halo behind */
+      0 0 10px rgba(147, 197, 253, 0.50),
+      0 0 24px rgba(96,  165, 250, 0.35),
+      0 0 48px rgba(59,  130, 246, 0.20) !important;
+    filter: none !important;
+  }
+
+  /* Headings that contain blue spans/strong should still keep the
+     same SUBTLE glow — no extra stacking. */
+  h1 .text-plasma-purple, h1 .text-nebula-blue, h1 .v3-blue,
+  h2 .text-plasma-purple, h2 .text-nebula-blue, h2 .v3-blue,
+  h3 .text-plasma-purple, h3 .text-nebula-blue, h3 .v3-blue {
+    text-shadow: var(--v3-glow-strong) !important;
+  }
+
+  /* ================================================================
+     V3 BUTTONS — same gradient + bright label + soft glow halo
+     ================================================================ */
+
+  .shiny-cta,
+  .shiny-cta:link,
+  .shiny-cta:visited,
+  .pricing-cta,
+  .pricing-cta-fill {
+    background: linear-gradient(
+      135deg,
+      var(--v3-blue-deep)   0%,
+      var(--v3-blue-base)  45%,
+      var(--v3-cyan-edge) 100%
+    ) !important;
+    border: 1px solid rgba(96, 165, 250, 0.55) !important;
+    box-shadow:
+      0 10px 28px rgba(29, 78, 216, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+  }
+  .shiny-cta:hover,
+  .pricing-cta:hover,
+  .pricing-cta-fill:hover {
+    background: linear-gradient(
+      135deg,
+      var(--v3-blue-deep)   0%,
+      var(--v3-blue-bright) 50%,
+      var(--v3-cyan-edge) 100%
+    ) !important;
+    box-shadow:
+      0 14px 32px rgba(29, 78, 216, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+  }
+
+  .shiny-cta, .shiny-cta *,
+  .pricing-cta, .pricing-cta *,
+  .pricing-cta-fill, .pricing-cta-fill * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-shadow:
+      0 0 1px rgba(255, 255, 255, 0.55),
+      0 1px 8px rgba(186, 230, 253, 0.30) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em;
+  }
+
+  /* Tailwind utility-tinted pill buttons */
+  .bg-plasma-purple\/20 { background-color: rgba(29, 78, 216, 0.22) !important; }
+  .bg-plasma-purple\/40 { background-color: rgba(29, 78, 216, 0.45) !important; }
+  .border-plasma-purple\/50 { border-color: rgba(96, 165, 250, 0.6) !important; }
+  .bg-plasma-purple { background-color: var(--v3-blue-base) !important; }
+
+  /* Header signup pill — same family */
+  header a[href*="signup"]:not(.shiny-cta) {
+    background-color: rgba(29, 78, 216, 0.25) !important;
+    border-color: rgba(96, 165, 250, 0.65) !important;
+    color: #ffffff !important;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.55) !important;
+  }
+  header a[href*="signup"]:not(.shiny-cta):hover {
+    background-color: rgba(29, 78, 216, 0.45) !important;
+  }
+</style>
+<style>
+  /* --- V3 hero gradient override --- */
+  /* The hero "Finds Leads" word uses a hardcoded dark gradient via
+     .hero-accent-group .hero-text-word. Force the bright V3 palette
+     here so it matches every other gradient text on the page. */
+  .hero-accent-group .hero-text-word {
+    background-image: none !important;
+    background-color: transparent !important;
+    -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+    color: #2563EB !important;
+    -webkit-text-fill-color: #2563EB !important;
+    /* IMPORTANT: no -webkit-text-stroke — it paints inside glyphs
+       (cross of A, gap of O, etc.) and looks messy. text-shadow
+       stays OUTSIDE the letter outline only. */
+    -webkit-text-stroke: 0 !important;
+    text-shadow:
+      /* 8-way outer outline (thicker edge, ~1.5px) */
+      -1px -1px 0 rgba(186, 230, 253, 0.70),
+       1px -1px 0 rgba(186, 230, 253, 0.70),
+      -1px  1px 0 rgba(186, 230, 253, 0.70),
+       1px  1px 0 rgba(186, 230, 253, 0.70),
+       0   -2px 0 rgba(186, 230, 253, 0.55),
+       2px   0  0 rgba(186, 230, 253, 0.55),
+       0    2px 0 rgba(186, 230, 253, 0.55),
+      -2px   0  0 rgba(186, 230, 253, 0.55),
+      /* atmospheric glow halo behind */
+      0 0 10px rgba(147, 197, 253, 0.50),
+      0 0 24px rgba(96,  165, 250, 0.35),
+      0 0 48px rgba(59,  130, 246, 0.20) !important;
+    filter: none !important;
+    background-size: auto !important;
+    background-position: 0 0 !important;
+  }
+  /* The .glow-accent class is applied to the accent wrapper —
+     match V3 colors so the halo around the word isn't navy. */
+  .glow-accent {
+    filter: drop-shadow(0 0 18px rgba(96, 165, 250, 0.45)) !important;
+  }
+</style>
+</head>
+<body class="font-body-md text-body-md selection:bg-plasma-purple/30 selection:text-white">
+<!-- Background layer: particle canvas + nebula glows, fixed behind all content. -->
+<canvas class="fixed inset-0 pointer-events-none opacity-40 z-0" id="hero-canvas"></canvas>
+<div class="nebula-glow w-[600px] h-[600px] bg-plasma-purple top-[-200px] left-[-200px]"></div>
+<div class="nebula-glow w-[500px] h-[500px] bg-nebula-blue bottom-[10%] right-[-100px]"></div>
+
+<!-- Navigation -->
+<header class="fixed top-0 w-full z-50 border-b border-white/5 bg-void-black/80 backdrop-blur-md">
+<nav class="flex justify-between items-center h-16 px-margin-safe max-w-container-max mx-auto">
+<a href="/" class="flex items-center gap-2 no-underline">
+<span class="material-symbols-outlined text-plasma-purple font-bold glow-accent">rocket_launch</span>
+<span class="font-display-xl text-xl font-bold tracking-widest text-on-surface">VELOSIFY</span>
+</a>
+<div class="flex items-center gap-4">
+<a class="hidden md:block text-label-sm text-on-surface-variant hover:text-white transition-colors" href="#features">Features</a>
+<a class="hidden md:block text-label-sm text-on-surface-variant hover:text-white transition-colors" href="#pricing">Pricing</a>
+<a class="hidden md:block text-label-sm text-on-surface-variant hover:text-white transition-colors" href="https://crm.velosify.ai/login">Sign in</a>
+<a class="bg-plasma-purple/20 border border-plasma-purple/50 px-4 py-1.5 text-white font-label-sm text-[11px] rounded-full hover:bg-plasma-purple/40 transition-all uppercase tracking-wider no-underline" href="https://crm.velosify.ai/signup">
+Get Started
+</a>
+</div>
+</nav>
+</header>
+
+<main class="relative z-10">
+<!-- Hero Section -->
+<section class="relative min-h-screen flex flex-col items-center justify-center pt-20 px-margin-safe text-center overflow-hidden">
+<div class="relative z-10 space-y-8 max-w-4xl w-full px-4">
+<h1 class="font-display-xl text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1] w-full" id="hero-title">
+<!-- Lines + words injected by JS -->
+</h1>
+<p class="text-lg md:text-xl text-on-surface-variant/80 max-w-md mx-auto opacity-0 translate-y-4 transition-all duration-700 delay-[400ms] leading-relaxed" id="hero-sub">
+Up to <span class="text-white font-bold">18,000 leads</span> per month.
+</p>
+<div class="pt-4 flex flex-col items-center gap-6 opacity-0 translate-y-4 transition-all duration-700 delay-[600ms]" id="hero-actions">
+<a href="https://crm.velosify.ai/signup" class="shiny-cta">Get Started Today</a>
+<div class="flex flex-col items-center gap-2 text-outline/60 mt-12">
+<span class="font-label-sm text-[10px] tracking-[0.3em]">INITIATE DISCOVERY</span>
+<span class="material-symbols-outlined animate-bounce text-sm">keyboard_double_arrow_down</span>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Brand ticker: two rows scrolling in opposite directions. Each track
+     contains 2 copies of its chip set so the loop is seamless at -50%.
+     Logos are lazy-loaded (data-src → src) when the section scrolls
+     into view, so the hero paint doesn't compete with 44 image fetches. -->
+<section class="relative z-10 py-8 md:py-10 space-y-4" id="brand-ticker">
+<!-- Row 1: scrolls right → left -->
+<div class="ticker-wrap">
+<div class="ticker-track">
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:google.svg?color=%23FFFFFF" alt="" /> Google</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:meta.svg?color=%23FFFFFF" alt="" /> Meta</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:salesforce.svg?color=%23FFFFFF" alt="" /> Salesforce</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:hubspot.svg?color=%23FFFFFF" alt="" /> HubSpot</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:stripe.svg?color=%23FFFFFF" alt="" /> Stripe</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:zapier.svg?color=%23FFFFFF" alt="" /> Zapier</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:twilio.svg?color=%23FFFFFF" alt="" /> Twilio</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:openai.svg?color=%23FFFFFF" alt="" /> OpenAI</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:slack.svg?color=%23FFFFFF" alt="" /> Slack</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:calendly.svg?color=%23FFFFFF" alt="" /> Calendly</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:shopify.svg?color=%23FFFFFF" alt="" /> Shopify</div>
+<!-- Duplicate set for seamless loop -->
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:google.svg?color=%23FFFFFF" alt="" /> Google</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:meta.svg?color=%23FFFFFF" alt="" /> Meta</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:salesforce.svg?color=%23FFFFFF" alt="" /> Salesforce</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:hubspot.svg?color=%23FFFFFF" alt="" /> HubSpot</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:stripe.svg?color=%23FFFFFF" alt="" /> Stripe</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:zapier.svg?color=%23FFFFFF" alt="" /> Zapier</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:twilio.svg?color=%23FFFFFF" alt="" /> Twilio</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:openai.svg?color=%23FFFFFF" alt="" /> OpenAI</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:slack.svg?color=%23FFFFFF" alt="" /> Slack</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:calendly.svg?color=%23FFFFFF" alt="" /> Calendly</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:shopify.svg?color=%23FFFFFF" alt="" /> Shopify</div>
+</div>
+</div>
+<!-- Row 2: scrolls left → right (reverse direction, reversed brand order for symmetry) -->
+<div class="ticker-wrap">
+<div class="ticker-track ticker-track-reverse">
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:shopify.svg?color=%23FFFFFF" alt="" /> Shopify</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:calendly.svg?color=%23FFFFFF" alt="" /> Calendly</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:slack.svg?color=%23FFFFFF" alt="" /> Slack</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:openai.svg?color=%23FFFFFF" alt="" /> OpenAI</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:twilio.svg?color=%23FFFFFF" alt="" /> Twilio</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:zapier.svg?color=%23FFFFFF" alt="" /> Zapier</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:stripe.svg?color=%23FFFFFF" alt="" /> Stripe</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:hubspot.svg?color=%23FFFFFF" alt="" /> HubSpot</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:salesforce.svg?color=%23FFFFFF" alt="" /> Salesforce</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:meta.svg?color=%23FFFFFF" alt="" /> Meta</div>
+<div class="ticker-chip"><img data-src="https://api.iconify.design/simple-icons:google.svg?color=%23FFFFFF" alt="" /> Google</div>
+<!-- Duplicate set for seamless loop -->
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:shopify.svg?color=%23FFFFFF" alt="" /> Shopify</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:calendly.svg?color=%23FFFFFF" alt="" /> Calendly</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:slack.svg?color=%23FFFFFF" alt="" /> Slack</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:openai.svg?color=%23FFFFFF" alt="" /> OpenAI</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:twilio.svg?color=%23FFFFFF" alt="" /> Twilio</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:zapier.svg?color=%23FFFFFF" alt="" /> Zapier</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:stripe.svg?color=%23FFFFFF" alt="" /> Stripe</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:hubspot.svg?color=%23FFFFFF" alt="" /> HubSpot</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:salesforce.svg?color=%23FFFFFF" alt="" /> Salesforce</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:meta.svg?color=%23FFFFFF" alt="" /> Meta</div>
+<div class="ticker-chip" aria-hidden="true"><img data-src="https://api.iconify.design/simple-icons:google.svg?color=%23FFFFFF" alt="" /> Google</div>
+</div>
+</div>
+</section>
+
+<!-- Value Section -->
+<section class="relative py-stack-xl px-margin-safe" id="features">
+<div class="max-w-container-max mx-auto text-center mb-12 md:mb-16 reveal">
+<span class="font-label-sm text-xs text-plasma-purple font-bold uppercase tracking-[0.3em]">Features</span>
+<h2 class="font-display-xl text-2xl md:text-5xl mt-6 text-white font-bold leading-tight whitespace-nowrap fit-line"><span class="text-transparent bg-clip-text bg-gradient-to-r from-plasma-purple to-nebula-blue">18,000</span> Leads Per Month</h2>
+<!-- Desktop only: second headline sits next to the first in the header.
+     On mobile this headline is rendered as a divider between the two
+     cards (see below) so it visually introduces card 2. -->
+<p class="desktop-only font-display-xl md:text-4xl mt-3 font-bold tracking-tight whitespace-nowrap fit-line text-white">Identify The <span class="text-transparent bg-clip-text bg-gradient-to-r from-plasma-purple to-nebula-blue">Mobile Lines.</span></p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-container-max mx-auto px-4 md:px-0 items-start md:items-stretch">
+<div class="md:col-span-6 glass-card p-8 rounded-3xl overflow-hidden relative group reveal">
+<div class="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
+<span class="material-symbols-outlined text-8xl text-nebula-blue">gps_fixed</span>
+</div>
+<div class="relative z-10 max-w-md">
+<h3 class="font-display-xl text-2xl text-white font-bold mb-4">The Lead Generator</h3>
+<div class="mt-10 mb-16 flex flex-col sm:flex-row gap-3 relative" id="leadgen-demo-form">
+<div class="flex-1 glass-card p-4 rounded-xl bg-white/5 flex items-center transition-all overflow-hidden" id="demo-input-service">
+<span class="text-sm leading-none flex items-center min-h-[16px] truncate" id="demo-text-service">
+<span class="text-outline font-normal italic">Service</span>
+</span>
+</div>
+<div class="flex-1 glass-card p-4 rounded-xl bg-white/5 flex items-center transition-all overflow-hidden" id="demo-input-city">
+<span class="text-sm leading-none flex items-center min-h-[16px] truncate" id="demo-text-city">
+<span class="text-outline font-normal italic">City</span>
+</span>
+</div>
+<a href="https://crm.velosify.ai/signup" id="demo-search-btn" class="w-full sm:w-auto h-14 sm:h-auto sm:px-6 sm:py-3.5 bg-plasma-purple text-white rounded-xl font-display-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-plasma-purple/30 no-underline">
+<span class="material-symbols-outlined text-base">rocket_launch</span>
+<span>Velosify</span>
+</a>
+<!-- Animated demo cursor -->
+<div class="demo-cursor" id="demo-cursor" aria-hidden="true">
+<div class="demo-cursor-inner">
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M5.5 3.5L19 12L12 13.5L9.5 20L5.5 3.5Z" fill="white" stroke="#1a1620" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+</div>
+</div>
+<!-- Result toast after "search" -->
+<div class="demo-result" id="demo-result">
+<span class="material-symbols-outlined text-sm" style="color:#bbf7d0;">check_circle</span>
+<span>4,812 leads found in Detroit</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Mobile-only divider: "Identify The Mobile Lines." sits between
+     the two cards as a thematic intro to card 2. py-6 stacks on top
+     of the grid's gap-6 for an effective ~48px buffer on each side —
+     gives the lead gen card extra breathing room below before the
+     headline lands. -->
+<div class="mobile-only text-center py-6 reveal">
+<p class="font-display-xl text-xl font-bold tracking-tight whitespace-nowrap fit-line text-white">Identify The <span class="text-transparent bg-clip-text bg-gradient-to-r from-plasma-purple to-nebula-blue">Mobile Lines.</span></p>
+</div>
+
+<!-- Identify Lines card. On desktop spans 2 grid rows on the right so
+     the left column can stack Lead Gen on top of the new Revenue
+     Dashboard. On mobile (grid-cols-1) it just stacks normally between
+     the divider and the dashboard. -->
+<div class="md:col-span-6 md:row-span-2 glass-card p-8 rounded-3xl overflow-hidden relative reveal reveal-delay-1 group" id="twilio-section">
+<div class="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none">
+<span class="material-symbols-outlined text-8xl text-nebula-blue">phone_in_talk</span>
+</div>
+<h3 class="font-display-xl text-2xl text-white font-bold mb-3 relative z-10">Call The Owner's Cell</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6 text-sm">Skip the landlines that have receptionists and talk to the decision makers.</p>
+<!-- Button sits ABOVE the list so when the cursor clicks it, the eye
+     naturally flows downward to watch the badges flip. -->
+<div class="flex justify-center mb-5 relative" id="twilio-btn-wrap">
+<button id="twilio-identify-btn" class="w-full sm:w-auto h-14 sm:h-auto sm:px-6 sm:py-3.5 bg-plasma-purple text-white rounded-xl font-display-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-plasma-purple/30">
+<span class="material-symbols-outlined text-base">rocket_launch</span>
+<span>Velosify</span>
+</button>
+<div class="demo-cursor" id="twilio-cursor" aria-hidden="true">
+<div class="demo-cursor-inner">
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M5.5 3.5L19 12L12 13.5L9.5 20L5.5 3.5Z" fill="white" stroke="#1a1620" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+</div>
+</div>
+<!-- /twilio-btn-wrap -->
+</div>
+<div class="space-y-1.5" id="twilio-list">
+<!-- contact rows injected by JS -->
+</div>
+<!-- Progress counter at the bottom — updates as each badge flips.
+     Once the counter hits 10 a green check icon pops in beside the
+     text as a satisfying "complete" confirmation. -->
+<div class="mt-4 flex items-center justify-center gap-2 text-[10px] text-outline uppercase tracking-widest font-bold">
+<span><span id="twilio-progress-num">0</span> of 10 identified</span>
+<span id="twilio-progress-check" class="material-symbols-outlined twilio-progress-check" aria-hidden="true">check_circle</span>
+</div>
+</div>
+
+<!-- Revenue Dashboard card.
+     Lives in the lower-left of the desktop grid (Identify Lines spans
+     rows 1-2 on the right, this card lands at row 2 on the left).
+     On mobile (grid-cols-1) it appears last in DOM order, completing
+     the find → filter → close narrative. Animated on viewport entry:
+     revenue counter ramps from 0, mini bar chart bars rise in sequence,
+     and an activity feed scrolls new "deal closed" rows in every few
+     seconds. -->
+<div class="md:col-span-6 glass-card p-6 md:p-8 rounded-3xl overflow-hidden relative reveal reveal-delay-2 group" id="revenue-dashboard">
+<div class="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none">
+<span class="material-symbols-outlined text-8xl text-plasma-purple">show_chart</span>
+</div>
+
+<h3 class="font-display-xl text-2xl text-white font-bold mb-3 relative z-10">Live Dashboard</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6 text-sm">Live revenue, deals closed, and conversations happening in real time.</p>
+
+<!-- Revenue counter + month-over-month delta -->
+<div class="flex items-end justify-between mb-5 relative z-10">
+<div>
+<div class="font-label-sm text-[10px] uppercase tracking-widest text-outline font-bold mb-1">Revenue This Month</div>
+<div class="font-display-xl text-3xl md:text-4xl font-bold leading-none">
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-plasma-purple to-nebula-blue">$<span id="dash-revenue">0</span></span>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-sm text-[10px] uppercase tracking-widest font-bold flex items-center gap-1 justify-end" style="color:#86efac;">
+<span class="material-symbols-outlined" style="font-size:14px;">trending_up</span>
+<span><span id="dash-pct">0</span>%</span>
+</div>
+<div class="text-[10px] text-outline mt-1">vs. last month</div>
+</div>
+</div>
+
+<!-- Mini bar chart — 14 days of revenue, gradient bars rise in sequence on scroll-in -->
+<div class="mb-5 relative z-10">
+<div class="flex items-end gap-[3px] h-16" id="dash-chart"></div>
+</div>
+
+<!-- Live activity feed — new rows roll in every ~2.5s, max 3 visible -->
+<div class="space-y-1.5 relative z-10" id="dash-feed" style="min-height: 96px;">
+<!-- JS-injected activity items -->
+</div>
+</div>
+
+</section>
+
+<!-- Pricing Section -->
+<!-- pt-8 md:pt-12 trims the top padding from the default 80px down
+     to 32/48px so the PRICING eyebrow sits closer to the features
+     section above. pb-stack-xl preserves the 80px bottom so the
+     pricing card has room before FAQ. -->
+<section class="pt-8 md:pt-12 pb-stack-xl px-margin-safe" id="pricing">
+<!-- Eyebrow header — matches the Features section's eyebrow exactly:
+     plasma-purple JetBrains Mono caps, wide tracking, same margin
+     below so the rhythm between section header and card is identical
+     on both mobile and desktop. -->
+<div class="max-w-container-max mx-auto text-center mb-12 md:mb-16 reveal">
+<span class="font-label-sm text-xs text-plasma-purple font-bold uppercase tracking-[0.3em]">Pricing</span>
+</div>
+<!-- Single $49/mo pricing card, centered with the rotating
+     conic-gradient border treatment. Tiers removed — one rate
+     covers everything. -->
+<div class="max-w-sm mx-auto pro-border rounded-3xl overflow-visible shadow-2xl shadow-plasma-purple/10 reveal">
+  <div class="pro-inner p-8 md:p-10 flex flex-col items-center text-center" style="border-radius: calc(1.5rem - 2px);">
+    <div class="bg-gradient-to-r from-plasma-purple to-nebula-blue px-5 py-1.5 rounded-full text-[10px] text-white font-bold uppercase tracking-widest mb-8">Pro Access</div>
+    <div class="flex items-baseline gap-1 mb-3">
+      <span class="text-6xl font-display-xl font-bold text-white">$49</span>
+      <span class="text-on-surface-variant font-label-sm text-xs">/MO</span>
+    </div>
+    <p class="font-display-xl text-base font-bold mb-1">
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-plasma-purple to-nebula-blue">18,000</span>
+      <span class="text-white"> leads / month</span>
+    </p>
+    <p class="text-xs text-on-surface-variant mb-6">just <span class="text-plasma-purple font-bold">0.3¢</span> per lead</p>
+    <p class="text-[10px] text-on-surface-variant tracking-widest uppercase mb-8">Cancel Anytime · No Contract</p>
+    <ul class="w-full space-y-3 mb-10 text-left">
+      <li class="flex items-start gap-3 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-nebula-blue text-sm shrink-0 mt-0.5">check_circle</span>
+        <span>Unlimited contacts &amp; deals</span>
+      </li>
+      <li class="flex items-start gap-3 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-nebula-blue text-sm shrink-0 mt-0.5">check_circle</span>
+        <span>3,000 phone identifications/mo</span>
+      </li>
+      <li class="flex items-start gap-3 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-nebula-blue text-sm shrink-0 mt-0.5">check_circle</span>
+        <span>Lead Generator Pro Scraper</span>
+      </li>
+      <li class="flex items-start gap-3 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-nebula-blue text-sm shrink-0 mt-0.5">check_circle</span>
+        <span>Multi-project workspaces</span>
+      </li>
+    </ul>
+    <a href="https://crm.velosify.ai/signup" class="shiny-cta full-width mt-auto"><span>Get Started</span></a>
+  </div>
+</div>
+</section>
+
+<!-- FAQ -->
+<!-- Same tightening as the Pricing section so all three section
+     eyebrows (FEATURES → PRICING → FAQ) feel evenly spaced. -->
+<section class="pt-8 md:pt-12 pb-stack-xl px-margin-safe">
+<div class="max-w-container-max mx-auto px-4 md:px-0">
+<!-- Section header mirrors the FEATURES / PRICING block: eyebrow on
+     top, headline below, same `mb-12 md:mb-16` rhythm before the
+     content grid kicks in. -->
+<div class="text-center mb-12 md:mb-16 reveal">
+<span class="font-label-sm text-xs text-plasma-purple font-bold uppercase tracking-[0.3em]">FAQ</span>
+<h2 class="font-display-xl text-3xl mt-6 text-white font-bold">Questions, <span class="text-on-surface-variant">answered.</span></h2>
+</div>
+<div class="grid md:grid-cols-2 gap-4 md:gap-6 items-start">
+<details class="faq-item glass-card rounded-2xl reveal">
+<summary class="faq-summary">
+<h4 class="font-display-xl text-white font-bold pr-3">How is this different from other CRMs?</h4>
+<span class="material-symbols-outlined faq-chevron text-plasma-purple">expand_more</span>
+</summary>
+<div class="faq-body">
+<p class="text-sm text-on-surface-variant leading-relaxed">Other CRMs assume you already have leads. Velosify is a tracking tool PLUS a lead generator that scrapes high-intent local data automatically.</p>
+</div>
+</details>
+<details class="faq-item glass-card rounded-2xl reveal reveal-delay-1">
+<summary class="faq-summary">
+<h4 class="font-display-xl text-white font-bold pr-3">Are there any usage fees inside the app?</h4>
+<span class="material-symbols-outlined faq-chevron text-plasma-purple">expand_more</span>
+</summary>
+<div class="faq-body">
+<p class="text-sm text-on-surface-variant leading-relaxed">Your $49/month plan includes <strong>18,000 lead scrapes</strong> and <strong>3,000 phone-number identifications</strong> each month — both allowances reset on your billing date. If you go over either limit, you pay a small per-use fee (just a fraction of a penny per number) until the next reset. For most users the included quota is plenty to stay busy all month.</p>
+</div>
+</details>
+<details class="faq-item glass-card rounded-2xl reveal">
+<summary class="faq-summary">
+<h4 class="font-display-xl text-white font-bold pr-3">Can I cancel anytime?</h4>
+<span class="material-symbols-outlined faq-chevron text-plasma-purple">expand_more</span>
+</summary>
+<div class="faq-body">
+<p class="text-sm text-on-surface-variant leading-relaxed">Yes. No contracts, no commitments. Cancel from Settings → Billing in one click and you won't be charged again. You keep access until the end of your current billing period.</p>
+</div>
+</details>
+<details class="faq-item glass-card rounded-2xl reveal reveal-delay-1">
+<summary class="faq-summary">
+<h4 class="font-display-xl text-white font-bold pr-3">Do I need to install anything?</h4>
+<span class="material-symbols-outlined faq-chevron text-plasma-purple">expand_more</span>
+</summary>
+<div class="faq-body">
+<p class="text-sm text-on-surface-variant leading-relaxed">No. It's 100% web-based and responsive. Works on desktop, tablet, and mobile with zero downloads required.</p>
+</div>
+</details>
+<details class="faq-item glass-card rounded-2xl reveal">
+<summary class="faq-summary">
+<h4 class="font-display-xl text-white font-bold pr-3">Is my data secure?</h4>
+<span class="material-symbols-outlined faq-chevron text-plasma-purple">expand_more</span>
+</summary>
+<div class="faq-body">
+<p class="text-sm text-on-surface-variant leading-relaxed">Every user gets a fully isolated workspace. Your data is encrypted and stored with daily automated backups.</p>
+</div>
+</details>
+<details class="faq-item glass-card rounded-2xl reveal reveal-delay-1">
+<summary class="faq-summary">
+<h4 class="font-display-xl text-white font-bold pr-3">What kind of support do you offer?</h4>
+<span class="material-symbols-outlined faq-chevron text-plasma-purple">expand_more</span>
+</summary>
+<div class="faq-body">
+<p class="text-sm text-on-surface-variant leading-relaxed">Reach our support team at <a href="mailto:support@velosify.ai" class="text-plasma-purple hover:text-white transition-colors">support@velosify.ai</a> — most messages get a reply within a few hours during business days. Onboarding help, CSV import, and custom-field setup are included with every plan at no extra cost.</p>
+</div>
+</details>
+</div>
+</div>
+</section>
+
+<!-- Final CTA -->
+<section class="py-stack-xl px-margin-safe text-center relative overflow-hidden">
+<div class="max-w-3xl mx-auto relative z-10 px-4 reveal">
+<h2 class="font-display-xl text-2xl md:text-6xl text-white font-bold mb-8 leading-tight">
+  <span class="block whitespace-nowrap fit-line">Stop Paying For Leads</span>
+  <span class="block whitespace-nowrap fit-line">Start <span class="text-transparent bg-clip-text bg-gradient-to-r from-plasma-purple to-nebula-blue">Velosifying</span> Them</span>
+</h2>
+<p class="text-on-surface-variant text-lg mb-12">Get started in minutes.</p>
+<a href="https://crm.velosify.ai/signup" class="pricing-cta font-display-xl no-underline" style="display:inline-flex;width:auto;padding:14px 28px;font-size:13px;">
+<span>Get Started</span>
+</a>
+</div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer class="relative z-10 w-full py-20 border-t border-white/5">
+<div class="max-w-container-max mx-auto px-margin-safe">
+<div class="flex flex-col md:flex-row justify-between items-center gap-10">
+<a href="/" class="flex items-center gap-3 no-underline">
+<span class="material-symbols-outlined text-plasma-purple font-bold">rocket_launch</span>
+<span class="font-display-xl text-2xl font-bold tracking-widest text-white">VELOSIFY</span>
+</a>
+<div class="flex flex-wrap justify-center gap-x-8 gap-y-3">
+<a class="text-[10px] uppercase tracking-widest text-outline hover:text-white transition-colors" href="/privacy">Privacy</a>
+<a class="text-[10px] uppercase tracking-widest text-outline hover:text-white transition-colors" href="/terms">Terms</a>
+<a class="text-[10px] uppercase tracking-widest text-outline hover:text-white transition-colors" href="/cookies">Cookies</a>
+<a class="text-[10px] uppercase tracking-widest text-outline hover:text-white transition-colors" href="/refund-policy">Refunds</a>
+</div>
+<div class="text-[10px] uppercase tracking-widest text-outline text-center md:text-right leading-relaxed">
+<div>© 2026 VELOSIFY CRM. PRECISION ENGINEERED.</div>
+<div class="mt-1">Built by <span class="text-white">Nolan Johnson</span></div>
+</div>
+</div>
+</div>
+</footer>
+
+<script>
+  // Hero Title Word Animation.
+  // Structured so we can drop a line break after "That" and give
+  // "Finds Leads" the plasma→nebula gradient color treatment.
+  const titleParts = [
+    { word: "The" },
+    { word: "Only" },
+    { word: "CRM" },
+    { word: "That", breakAfter: true },
+    { word: "Finds", accent: true },
+    { word: "Leads", accent: true },
+    { word: "For" },
+    { word: "You" }
+  ];
+  const titleEl = document.getElementById('hero-title');
+  // Group title parts into lines based on `breakAfter`. Each line becomes
+  // a flex container that justify-betweens on mobile (so words spread
+  // edge-to-edge for that "wide-screen movie title" look) and centers
+  // naturally on desktop with a tight gap.
+  const lines = [[]];
+  titleParts.forEach((part) => {
+    lines[lines.length - 1].push(part);
+    if (part.breakAfter) lines.push([]);
+  });
+  let wordIdx = 0;
+  lines.forEach((lineParts) => {
+    const lineEl = document.createElement('div');
+    lineEl.className = 'hero-line';
+    // Group consecutive accent words into a single wrapper so the
+    // purple → blue gradient runs continuously across the whole phrase
+    // (e.g. "Finds Leads" reads as one ribbon of color, not two
+    // independently-gradiented words).
+    let accentGroup = null;
+    lineParts.forEach((part) => {
+      const span = document.createElement('span');
+      span.textContent = part.word;
+      span.className = 'hero-text-word';
+      span.style.transitionDelay = `${wordIdx * 0.1}s`;
+      if (part.accent) {
+        if (!accentGroup) {
+          accentGroup = document.createElement('span');
+          accentGroup.className = 'hero-accent-group';
+          lineEl.appendChild(accentGroup);
+        }
+        accentGroup.appendChild(span);
+      } else {
+        accentGroup = null;
+        lineEl.appendChild(span);
+      }
+      wordIdx += 1;
+    });
+    titleEl.appendChild(lineEl);
+  });
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.hero-text-word').forEach(word => word.classList.add('visible'));
+    // Tighter timing — hero is fully visible within ~1.3s of page load.
+    setTimeout(() => {
+      document.getElementById('hero-sub').classList.remove('opacity-0', 'translate-y-4');
+      document.getElementById('hero-actions').classList.remove('opacity-0', 'translate-y-4');
+    }, 200);
+  });
+
+  /* ---- Fit each hero line to the container width on mobile ----
+     The hero title has two lines with different word counts ("The CRM
+     That" vs "Finds Leads For You"). To make BOTH lines stretch
+     edge-to-edge with proper cinematic weight, we measure each line's
+     natural rendered width at the current font-size and scale it up so
+     the rendered text exactly fills the parent. Desktop (≥768px) is
+     left alone — Tailwind's text-5xl/6xl/7xl is already sized for big
+     screens. */
+  const fitHeroLines = () => {
+    const lines = titleEl.querySelectorAll('.hero-line');
+    const standaloneLines = document.querySelectorAll('.fit-line');
+    // Reset before measuring so we always read the inherited size, not
+    // a previously-fit one. Reset BOTH hero lines AND any .fit-line
+    // headings so desktop resize reverts cleanly to Tailwind sizing.
+    lines.forEach(line => { line.style.fontSize = ''; });
+    standaloneLines.forEach(el => { el.style.fontSize = ''; });
+    if (window.innerWidth >= 768) return;
+    const containerWidth = titleEl.clientWidth;
+    if (!containerWidth) return;
+    // Match the CSS `gap: 0.28em` on .hero-line — the gap scales with
+    // font-size so we have to include it in the natural-width estimate
+    // for the ratio math to be correct.
+    const GAP_EM = 0.28;
+    // Fit each line edge-to-edge. Sub-pixel rounding from the font metrics
+    // means we trim ~2px so the line never overshoots and triggers a
+    // horizontal scroll bar.
+    const targetWidth = containerWidth - 2;
+    lines.forEach(line => {
+      const words = line.querySelectorAll('.hero-text-word');
+      if (!words.length) return;
+      const baseSize = parseFloat(getComputedStyle(line).fontSize);
+      // scrollWidth on a width:100% flex container returns the container
+      // width, not the natural text width — so sum each word's
+      // offsetWidth (each span is display:inline-block, so offsetWidth
+      // is its text width) and add the inter-word gaps explicitly.
+      let naturalWidth = 0;
+      words.forEach(w => { naturalWidth += w.offsetWidth; });
+      naturalWidth += (words.length - 1) * GAP_EM * baseSize;
+      if (!naturalWidth) return;
+      const fitted = (targetWidth / naturalWidth) * baseSize;
+      line.style.fontSize = fitted + 'px';
+    });
+    // After font-size settles, recompute each accent-group word's slice
+    // of the continuous gradient. Done in a microtask so the browser
+    // has applied the new font-size before we measure offsets.
+    requestAnimationFrame(() => {
+      titleEl.querySelectorAll('.hero-accent-group').forEach(group => {
+        const groupRect = group.getBoundingClientRect();
+        const groupWidth = groupRect.width;
+        if (!groupWidth) return;
+        group.querySelectorAll('.hero-text-word').forEach(word => {
+          const wordLeft = word.getBoundingClientRect().left - groupRect.left;
+          word.style.setProperty('--accent-width', groupWidth + 'px');
+          word.style.setProperty('--accent-offset', `-${wordLeft}px`);
+        });
+      });
+    });
+
+    // Also fit any standalone single-line headings tagged .fit-line
+    // (e.g. the Features section's two headlines). These elements are
+    // normal block-level h2/p, which means their scrollWidth equals
+    // their clientWidth whenever the text already fits (the element
+    // fills its parent regardless of content). To read the true
+    // natural text width we temporarily flip display to inline-block
+    // so the element shrinkwraps to content, measure scrollWidth,
+    // then immediately revert. The flip+revert happens synchronously
+    // inside one frame so there's no visible flicker.
+    document.querySelectorAll('.fit-line').forEach(el => {
+      const parent = el.parentElement;
+      if (!parent) return;
+      const parentWidth = parent.clientWidth;
+      if (!parentWidth) return;
+      const baseSize = parseFloat(getComputedStyle(el).fontSize);
+      const prevDisplay = el.style.display;
+      el.style.display = 'inline-block';
+      const natural = el.scrollWidth;
+      el.style.display = prevDisplay;
+      if (!natural) return;
+      const fitted = ((parentWidth - 2) / natural) * baseSize;
+      el.style.fontSize = fitted + 'px';
+    });
+  };
+  // Run as early as possible, then again once the web fonts settle so
+  // the final Sora metrics are used (different fallback fonts measure
+  // differently and would leave us slightly off).
+  fitHeroLines();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitHeroLines);
+  }
+  window.addEventListener('load', fitHeroLines);
+  let _heroFitTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_heroFitTimer);
+    _heroFitTimer = setTimeout(fitHeroLines, 80);
+  });
+  window.addEventListener('orientationchange', fitHeroLines);
+
+  /* ---- FAQ accordion: single-open behavior ----
+     Native <details> already handles per-item toggle on click. This
+     just adds the "close everyone else when one opens" rule so the
+     FAQ behaves like a true accordion instead of independent toggles. */
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(item => {
+    item.addEventListener('toggle', () => {
+      if (!item.open) return;
+      faqItems.forEach(other => {
+        if (other !== item) other.open = false;
+      });
+    });
+  });
+
+  /* ---- Lazy-load brand ticker icons ----
+     The 44 ticker <img> tags carry their URL in data-src; only when the
+     ticker section scrolls into view do we promote them to real src
+     attributes so the browser actually fetches them. Keeps the hero
+     paint clean even on slow connections. */
+  (function lazyLoadTicker() {
+    const section = document.getElementById('brand-ticker');
+    if (!section) return;
+    const imgs = section.querySelectorAll('img[data-src]');
+    if (!imgs.length) return;
+
+    function hydrate() {
+      imgs.forEach((img) => {
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+      });
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      hydrate();
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          hydrate();
+          io.disconnect();
+        }
+      });
+    }, { rootMargin: '200px 0px' });
+    io.observe(section);
+  })();
+
+  /* ---- Scroll-triggered reveal for everything below the hero ----
+     Any element with class="reveal" fades + slides up when it enters
+     the viewport. Triggers once, then unobserves to save CPU. */
+  (function setupScrollReveal() {
+    const els = document.querySelectorAll('.reveal');
+    if (!els.length || !('IntersectionObserver' in window)) {
+      // Fallback for ancient browsers: show everything immediately.
+      els.forEach((el) => el.classList.add('in-view'));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.12,
+      rootMargin: '0px 0px -60px 0px',
+    });
+    els.forEach((el) => observer.observe(el));
+  })();
+
+  // Canvas particle background
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  let particles = [];
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * width;
+      this.y = Math.random() * height;
+      this.z = Math.random() * 3 + 1;
+      this.speed = (Math.random() * 0.3 + 0.05) * (this.z / 3);
+      this.opacity = Math.random() * 0.4 + 0.1;
+      this.size = Math.random() * 1.5 + 0.5;
+      this.color = Math.random() > 0.5 ? '#1E3A8A' : '#0369A1';
+    }
+    update() {
+      this.y -= this.speed;
+      if (this.y < 0) this.reset();
+    }
+    draw() {
+      ctx.fillStyle = this.color;
+      ctx.globalAlpha = this.opacity;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+  // 80 is plenty — visually identical, much lighter on GPU.
+  for (let i = 0; i < 80; i++) particles.push(new Particle());
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.lineWidth = 0.5;
+    const step = 80;
+    for (let x = 0; x < width; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y < height; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(animate);
+  }
+  animate();
+  window.addEventListener('mousemove', (e) => {
+    const moveX = (e.clientX - width / 2) / 100;
+    const moveY = (e.clientY - height / 2) / 100;
+    particles.forEach(p => {
+      p.x += moveX * (p.z * 0.1);
+      p.y += moveY * (p.z * 0.1);
+    });
+  });
+
+  /* ----------------------------------------------------------------
+     Lead Generator demo animation — cursor moves, types into fields,
+     clicks Search, shows a 'leads found' toast, loops while visible.
+     ---------------------------------------------------------------- */
+  (function leadgenDemo() {
+    const form = document.getElementById('leadgen-demo-form');
+    if (!form) return;
+    const cursor = document.getElementById('demo-cursor');
+    const cursorInner = cursor.querySelector('.demo-cursor-inner');
+    const serviceText = document.getElementById('demo-text-service');
+    const cityText = document.getElementById('demo-text-city');
+    const serviceInput = document.getElementById('demo-input-service');
+    const cityInput = document.getElementById('demo-input-city');
+    const searchBtn = document.getElementById('demo-search-btn');
+    const result = document.getElementById('demo-result');
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    let running = false;
+    let stopRequested = false;
+
+    function moveCursorTo(target, offsetX = 0, offsetY = 0) {
+      const formRect = form.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      // Aim slightly into the target (left-of-center) so the cursor
+      // looks like a person, not a robot snapping to exact midpoints.
+      const x = r.left - formRect.left + r.width * 0.4 + offsetX - 6;
+      const y = r.top - formRect.top + r.height * 0.5 + offsetY - 6;
+      cursor.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    // Render an input with a placeholder (greyed, italic) when empty.
+    function setPlaceholder(el, placeholder) {
+      el.innerHTML = `<span class="text-outline font-normal italic">${placeholder}</span>`;
+    }
+
+    // Type text left-to-right inside the input, replacing whatever was there
+    // (including the placeholder) on the FIRST keystroke. Blinking caret
+    // follows the last typed character.
+    async function typeText(el, text, baseDelay = 75) {
+      // Replace placeholder immediately — caret only, no characters yet.
+      el.innerHTML = '<span class="text-white font-bold demo-typed"></span><span class="demo-caret"></span>';
+      const typed = el.querySelector('.demo-typed');
+      const caret = el.querySelector('.demo-caret');
+      for (let i = 0; i < text.length; i++) {
+        typed.textContent = text.slice(0, i + 1);
+        await sleep(baseDelay + Math.random() * 60);
+      }
+      // Leave the caret blinking briefly after the last char, then drop it.
+      await sleep(420);
+      if (caret && caret.parentNode) caret.parentNode.removeChild(caret);
+    }
+
+    async function clickPulse() {
+      cursor.classList.add('clicking');
+      await sleep(170);
+      cursor.classList.remove('clicking');
+    }
+
+    async function runDemo() {
+      if (running) return;
+      running = true;
+      while (!stopRequested) {
+        // Reset state — both inputs show their italic placeholders again.
+        setPlaceholder(serviceText, 'Service');
+        setPlaceholder(cityText, 'City');
+        serviceInput.classList.remove('demo-input-active');
+        cityInput.classList.remove('demo-input-active');
+        result.classList.remove('visible');
+
+        // Cursor enters from below-right of the search button (rest pose).
+        moveCursorTo(searchBtn, 30, 60);
+        cursor.classList.add('visible');
+        await sleep(700);
+
+        // → Service field
+        moveCursorTo(serviceInput);
+        await sleep(950);
+        await clickPulse();
+        serviceInput.classList.add('demo-input-active');
+        await sleep(150);
+        await typeText(serviceText, 'Roofers');
+        await sleep(450);
+        serviceInput.classList.remove('demo-input-active');
+
+        // → City field
+        moveCursorTo(cityInput);
+        await sleep(900);
+        await clickPulse();
+        cityInput.classList.add('demo-input-active');
+        await sleep(150);
+        await typeText(cityText, 'Detroit, MI');
+        await sleep(450);
+        cityInput.classList.remove('demo-input-active');
+
+        // → Search button (click + pulse + result)
+        moveCursorTo(searchBtn);
+        await sleep(800);
+        await clickPulse();
+        searchBtn.classList.add('demo-search-pulse');
+        await sleep(500);
+        searchBtn.classList.remove('demo-search-pulse');
+
+        result.classList.add('visible');
+        await sleep(2600);
+
+        // Fade everything out, pause, then loop.
+        result.classList.remove('visible');
+        cursor.classList.remove('visible');
+        await sleep(1400);
+      }
+      running = false;
+    }
+
+    // Only start the animation when the demo card scrolls into view.
+    // Pauses when it scrolls out (saves CPU when user is reading elsewhere).
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          stopRequested = false;
+          runDemo();
+        } else {
+          stopRequested = true;
+        }
+      });
+    }, { threshold: 0.35 });
+    io.observe(form);
+
+    // Recompute cursor positions on resize (transform values are in pixels).
+    window.addEventListener('resize', () => {
+      // Trigger a soft restart so the next loop iteration uses correct rects.
+      stopRequested = true;
+      setTimeout(() => {
+        const rect = form.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          stopRequested = false;
+          runDemo();
+        }
+      }, 100);
+    });
+  })();
+
+  /* ----------------------------------------------------------------
+     Twilio Line Identification demo — cursor clicks "Identify Lines",
+     then each contact's badge flips from Unknown → Mobile / Landline
+     / VoIP with a stagger, and the counter ticks up.
+     ---------------------------------------------------------------- */
+  /* ─── Revenue Dashboard demo ──────────────────────────────────────
+     Lower-left feature card: animates a counter from 0 → final revenue,
+     fills a 14-bar mini chart in sequence, and rolls "deal closed"
+     style events into an activity feed every ~2.5 seconds. Everything
+     fires on viewport entry via IntersectionObserver and pauses when
+     scrolled out. */
+  (function revenueDashboard() {
+    const section = document.getElementById('revenue-dashboard');
+    if (!section) return;
+    const revEl   = document.getElementById('dash-revenue');
+    const pctEl   = document.getElementById('dash-pct');
+    const chartEl = document.getElementById('dash-chart');
+    const feedEl  = document.getElementById('dash-feed');
+    if (!revEl || !chartEl || !feedEl) return;
+
+    // Build 14 bars representing the last 14 days of revenue. Heights
+    // trend upward and the final bar (today) is the tallest — visually
+    // suggests momentum.
+    const NUM_BARS = 14;
+    const bars = [];
+    for (let i = 0; i < NUM_BARS; i++) {
+      const base = 22 + Math.random() * 30;          // 22–52% base
+      const trend = (i / (NUM_BARS - 1)) * 35;       // up to +35% by end
+      bars.push(Math.min(94, base + trend));
+    }
+    bars[NUM_BARS - 1] = 98;                          // today caps out
+    chartEl.innerHTML = bars.map((h, i) => {
+      const cls = i === NUM_BARS - 1 ? 'dash-bar last' : 'dash-bar';
+      return `<div class="${cls}" data-target="${h.toFixed(1)}"></div>`;
+    }).join('');
+
+    // Rotating activity feed — these are the events that scroll in.
+    // Mix of revenue, lead-gen, and call activity so it reads as a
+    // realistic CRM heartbeat.
+    const events = [
+      { icon: 'attach_money',   color: '#86efac', text: 'Deal closed: Roof Doctors LLC', amount: '+$2,400', pos: true },
+      { icon: 'phone_in_talk',  color: '#c4a3ff', text: 'Owner answered cell',            amount: '+1 hot lead', pos: false },
+      { icon: 'gps_fixed',      color: '#93c5fd', text: '52 leads scraped — Detroit',     amount: '+52',     pos: false },
+      { icon: 'attach_money',   color: '#86efac', text: 'Deal closed: Apex Roofing Co.',  amount: '+$890',   pos: true },
+      { icon: 'trending_up',    color: '#c4a3ff', text: 'Pipeline value up',              amount: '+$8,200', pos: true },
+      { icon: 'check_circle',   color: '#86efac', text: 'Velocity Roof Repair paid',      amount: '+$1,650', pos: true },
+      { icon: 'phone_in_talk',  color: '#c4a3ff', text: 'Booked discovery call',          amount: '+1 mtg',  pos: false },
+      { icon: 'attach_money',   color: '#86efac', text: 'Deal closed: Eagle View',        amount: '+$3,100', pos: true },
+    ];
+    let eventIdx = 0;
+    const MAX_FEED_ITEMS = 3;
+    function pushEvent() {
+      const e = events[eventIdx % events.length];
+      eventIdx++;
+      const item = document.createElement('div');
+      item.className = 'dash-feed-item';
+      item.innerHTML =
+        '<span class="material-symbols-outlined dash-feed-icon" style="color:' + e.color + ';">' + e.icon + '</span>' +
+        '<span class="dash-feed-text">' + e.text + '</span>' +
+        '<span class="dash-feed-amount' + (e.pos ? ' pos' : '') + '">' + e.amount + '</span>';
+      feedEl.prepend(item);
+      while (feedEl.children.length > MAX_FEED_ITEMS) {
+        feedEl.lastElementChild.remove();
+      }
+    }
+
+    // Eased counter — 0 to target over ~1.8s.
+    function rampNumber(el, target, duration, formatter) {
+      const start = performance.now();
+      formatter = formatter || ((v) => Math.floor(v).toLocaleString());
+      function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);          // easeOutCubic
+        el.textContent = formatter(eased * target);
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    let started = false;
+    let feedTimer = null;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          if (!started) {
+            started = true;
+            // Counter ramp
+            rampNumber(revEl, 24847, 1800);
+            rampNumber(pctEl, 38,    1800);
+            // Bars rise in sequence with a tiny stagger
+            chartEl.querySelectorAll('.dash-bar').forEach((bar, i) => {
+              setTimeout(() => {
+                bar.style.height = bar.dataset.target + '%';
+              }, 200 + i * 55);
+            });
+            // First two events pop in quickly, then steady cadence
+            setTimeout(pushEvent, 600);
+            setTimeout(pushEvent, 1400);
+            feedTimer = setInterval(pushEvent, 2600);
+          } else if (!feedTimer) {
+            // Re-entered after leaving — restart the feed only
+            feedTimer = setInterval(pushEvent, 2600);
+          }
+        } else if (feedTimer) {
+          // Save cycles when the card scrolls out of view
+          clearInterval(feedTimer);
+          feedTimer = null;
+        }
+      });
+    }, { threshold: 0.3 });
+    io.observe(section);
+  })();
+
+  (function twilioDemo() {
+    const section = document.getElementById('twilio-section');
+    if (!section) return;
+    const list = document.getElementById('twilio-list');
+    const cursor = document.getElementById('twilio-cursor');
+    const btnWrap = document.getElementById('twilio-btn-wrap');
+    const button = document.getElementById('twilio-identify-btn');
+    const progressNum = document.getElementById('twilio-progress-num');
+    const progressCheck = document.getElementById('twilio-progress-check');
+
+    // 10 fake Detroit roofers — 4 mobile (the ones you actually want
+    // to call) + 6 landline/VoIP (the dead-end gatekeepers).
+    // Interleaved so the badge-flip animation shows variety, not blocks.
+    const contacts = [
+      { name: 'Apex Roofing Co.',        phone: '(313) 555-0142', type: 'mobile' },
+      { name: 'Stormguard Roofing Pros', phone: '(313) 555-0319', type: 'landline' },
+      { name: 'Eagle View Roofing',      phone: '(313) 555-0287', type: 'mobile' },
+      { name: 'Roof Doctors LLC',        phone: '(313) 555-0521', type: 'voip' },
+      { name: 'Mile High Roofing',       phone: '(313) 555-0456', type: 'mobile' },
+      { name: 'Hometown Roofing',        phone: '(313) 555-0823', type: 'landline' },
+      { name: 'Liberty Roofing & Siding',phone: '(313) 555-0634', type: 'voip' },
+      { name: 'Summit Peak Roofers',     phone: '(313) 555-0719', type: 'landline' },
+      { name: 'Velocity Roof Repair',    phone: '(313) 555-0945', type: 'mobile' },
+      { name: 'Northern Star Roofing',   phone: '(313) 555-1056', type: 'landline' },
+    ];
+    const typeMeta = {
+      mobile:   { icon: 'smartphone', label: 'Mobile' },
+      landline: { icon: 'call',       label: 'Landline' },
+      voip:     { icon: 'cloud',      label: 'VoIP' },
+    };
+    function initials(name) {
+      return name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+    function renderList() {
+      list.innerHTML = contacts.map((c, i) => `
+        <div class="twilio-row" data-row="${i}">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="twilio-avatar">${initials(c.name)}</div>
+            <div class="text-[12px] text-white font-medium truncate flex-1 min-w-0">${c.name}</div>
+            <div class="text-[11px] text-outline hidden sm:block whitespace-nowrap">${c.phone}</div>
+          </div>
+          <div class="twilio-badge twilio-badge-unknown" data-badge="${i}">
+            <span class="material-symbols-outlined">help</span>
+            <span>Unknown</span>
+          </div>
+        </div>
+      `).join('');
+    }
+    renderList();
+
+    function resetBadges() {
+      contacts.forEach((c, i) => {
+        const badge = list.querySelector(`[data-badge="${i}"]`);
+        const row = list.querySelector(`[data-row="${i}"]`);
+        if (!badge) return;
+        badge.className = 'twilio-badge twilio-badge-unknown';
+        badge.setAttribute('data-badge', i);
+        badge.innerHTML = '<span class="material-symbols-outlined">help</span><span>Unknown</span>';
+        if (row) row.classList.remove('identified');
+      });
+      progressNum.textContent = '0';
+      if (progressCheck) progressCheck.classList.remove('visible');
+    }
+    function flipBadge(i) {
+      const badge = list.querySelector(`[data-badge="${i}"]`);
+      const row = list.querySelector(`[data-row="${i}"]`);
+      if (!badge) return;
+      const meta = typeMeta[contacts[i].type];
+      badge.className = `twilio-badge twilio-badge-${contacts[i].type} flipping`;
+      badge.setAttribute('data-badge', i);
+      badge.innerHTML = `<span class="material-symbols-outlined">${meta.icon}</span><span>${meta.label}</span>`;
+      if (row) row.classList.add('identified');
+      // Strip the flipping class once the animation completes so the
+      // next loop iteration can re-trigger it.
+      setTimeout(() => badge.classList.remove('flipping'), 500);
+    }
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    let running = false;
+    let stopRequested = false;
+
+    function moveCursorTo(target, offsetX = 0, offsetY = 0) {
+      const wrapRect = btnWrap.getBoundingClientRect();
+      const r = target.getBoundingClientRect();
+      const x = r.left - wrapRect.left + r.width * 0.5 + offsetX - 14;
+      const y = r.top - wrapRect.top + r.height * 0.5 + offsetY - 14;
+      cursor.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    async function runDemo() {
+      if (running) return;
+      running = true;
+      while (!stopRequested) {
+        resetBadges();
+        // Cursor enters from the right of the button (resting pose).
+        moveCursorTo(button, 90, 40);
+        cursor.classList.add('visible');
+        await sleep(900);
+
+        // Glide to the button.
+        moveCursorTo(button);
+        await sleep(950);
+
+        // Click pulse.
+        cursor.classList.add('clicking');
+        await sleep(170);
+        cursor.classList.remove('clicking');
+        button.classList.add('demo-search-pulse');
+        await sleep(450);
+        button.classList.remove('demo-search-pulse');
+        await sleep(250);
+
+        // Identify each contact with a stagger.
+        for (let i = 0; i < contacts.length; i++) {
+          if (stopRequested) break;
+          flipBadge(i);
+          progressNum.textContent = String(i + 1);
+          // Pop the green completion check the moment the counter
+          // reaches the total — gives a satisfying "done" beat.
+          if (i + 1 === contacts.length && progressCheck) {
+            progressCheck.classList.add('visible');
+          }
+          await sleep(220);
+        }
+
+        // Hold the final state so the viewer can read all 10 results.
+        await sleep(3600);
+
+        cursor.classList.remove('visible');
+        await sleep(1100);
+      }
+      running = false;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          stopRequested = false;
+          runDemo();
+        } else {
+          stopRequested = true;
+        }
+      });
+    }, { threshold: 0.25 });
+    io.observe(section);
+
+    window.addEventListener('resize', () => {
+      stopRequested = true;
+      setTimeout(() => {
+        const rect = section.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          stopRequested = false;
+          runDemo();
+        }
+      }, 100);
+    });
+  })();
+</script>
+</body>
+</html>

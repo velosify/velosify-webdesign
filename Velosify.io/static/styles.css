@@ -1,0 +1,6721 @@
+/* Velosify.ai CRM — styles
+   Palette matches the marketing landing page (void-black, plasma-purple,
+   nebula-blue, stellar-lavender). All UI inherits from these tokens. */
+:root {
+  /* Consistent max-width for the single-card "management" views —
+     Lead Generator, Free Game, Support, Referral Program, etc.
+     Change once here, every panel re-aligns. */
+  --view-card-max-width: 820px;
+
+  --bg: #02040a;                       /* void-black, matches landing */
+  --bg-elev: #10131c;                  /* surface */
+  --bg-elev-2: #181c24;                /* surface-container-low */
+  --border: #232834;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text: #e0e2ee;                     /* on-surface */
+  --text-dim: #cbc3d7;                 /* on-surface-variant — slightly warmer */
+  --brand: #3B82F6;                    /* nebula-blue (primary action) */
+  --brand-2: #8B5CF6;                  /* plasma-purple (gradient pair) */
+  --accent: #C4A3FF;                   /* stellar-lavender (hover/accent) */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html {
+  /* Paint the page background on the root element so the dark theme stays
+     continuous when the page rubber-bands at the top/bottom on macOS. */
+  background: var(--bg);
+  min-height: 100%;
+  overflow-x: hidden;
+}
+body {
+  font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* Display font for headings — matches landing's Sora treatment. */
+h1, h2, h3, h4 {
+  font-family: "Sora", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  letter-spacing: -0.01em;
+}
+/* Data/label text — JetBrains Mono for monospace numerics (matches landing). */
+.brand-text, .data-mono, .user-ref-id, .col-resize, .api-key-value {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ---- Sitewide background atmosphere ----
+   Canonical `.nebula-glow` class copied VERBATIM from the landing page
+   (app.py LANDING_HTML <style> block, .nebula-glow rule). The actual
+   particle canvas is in /static/landing-bg.js (also copied verbatim).
+   DO NOT diverge from the landing values — that's the source of truth. */
+.nebula-glow {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* iOS Safari edge-tint guard.
+   Mobile Safari samples the page color at the very top and bottom of the
+   viewport to tint its status bar and URL bar. Without this guard, the
+   plasma-purple and nebula-blue glows leak their tones into the iOS Safari
+   chrome, making the browser bars look lavender/blue instead of V2 dark.
+
+   The scrim is a body::after pseudo-element rendered after the nebula
+   divs (so it paints above them at the same z-index) and before sidebar/
+   main content (which sit at z-index 1, above this scrim). pointer-events
+   stays disabled so clicks still pass through to whatever is below. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom,
+      #02040a 0,
+      transparent 96px,
+      transparent calc(100% - 96px),
+      #02040a 100%);
+}
+/* Sidebar + main content sit above the background layer. */
+.sidebar, .main { position: relative; z-index: 1; }
+
+/* Sidebar — pinned to the viewport so the Log out button and footer stay
+   visible no matter how long the contacts list is. Mobile (max-width: 768px)
+   overrides this to a slide-in drawer (further down in this file). */
+.sidebar {
+  /* SYSTEM FONT STACK TEST — same trick Close, GitHub, Stripe, Linear use.
+     macOS gets SF Pro, Windows gets Segoe UI, Android gets Roboto, etc.
+     Scoped to .sidebar only so we can A/B against Hanken Grotesk elsewhere. */
+  font-family:
+    -apple-system, system-ui, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue",
+    sans-serif;
+  background: rgba(10, 14, 22, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 14px 20px;       /* equal top/left so the brand sits flush */
+  gap: 20px;
+  /* Pinned to the viewport. Position: fixed beats whatever was breaking
+     position: sticky for some users (a parent overflow rule, a transform,
+     etc.). The body grid still reserves a 240px column for it (see body
+     styles), so layout stays the same. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;             /* internal scroll if the nav grows past
+                                   the viewport — keeps Log out reachable */
+  overscroll-behavior: contain;  /* don't chain sidebar scroll into page */
+  z-index: 10;
+}
+/* Hide the (usually invisible) scrollbar while still allowing scroll. */
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.06); border-radius: 3px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ---------- Global dark scrollbars ----------
+   Override the browser's default (white/grey) scrollbars everywhere so they
+   match the rest of the dark UI. Affects table overflow, modal bodies, the
+   kanban column, dropdowns — anything that scrolls. */
+* {
+  scrollbar-width: thin;                         /* Firefox */
+  scrollbar-color: rgba(139, 92, 246, 0.30) transparent;  /* thumb, track */
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;                                  /* horizontal scrollbar height */
+}
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.28);          /* subtle purple */
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.55);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(139, 92, 246, 0.75);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Brand mark — vector "Velosify CRM" wordmark with a pulsing neon glow.
+   The whole logo (mark + Velosify + CRM) is one SVG; the breathing halo
+   comes from layered drop-shadow filters animated on a 4-second loop. */
+.brand {
+  display: block;
+  padding: 0;                   /* sidebar provides spacing; brand is flush */
+  margin: 0 0 -4px;             /* nudge the next element a touch closer */
+}
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;            /* let the neon glow halo extend past viewBox */
+  animation: velosify-neon-pulse 4s ease-in-out infinite;
+}
+
+@keyframes velosify-neon-pulse {
+  0%, 100% {
+    /* Resting glow — softer, tighter halo. */
+    filter:
+      drop-shadow(0 0 2px rgba(240, 171, 252, 0.65))
+      drop-shadow(0 0 6px rgba(168, 85, 247, 0.4))
+      drop-shadow(0 0 14px rgba(139, 92, 246, 0.22));
+  }
+  50% {
+    /* Peak glow — bright, wide halo. */
+    filter:
+      drop-shadow(0 0 5px rgba(240, 171, 252, 1))
+      drop-shadow(0 0 14px rgba(168, 85, 247, 0.85))
+      drop-shadow(0 0 32px rgba(139, 92, 246, 0.6));
+  }
+}
+
+/* Respect reduced-motion preferences — pin to the resting glow with no loop. */
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo {
+    animation: none;
+    filter:
+      drop-shadow(0 0 3px rgba(240, 171, 252, 0.85))
+      drop-shadow(0 0 9px rgba(168, 85, 247, 0.55))
+      drop-shadow(0 0 22px rgba(139, 92, 246, 0.35));
+  }
+}
+
+/* ─── V2 brand mark ───────────────────────────────────────────────────────
+   1:1 with the landing-page header: Material Symbols `rocket_launch` glyph
+   colored plasma-purple with a soft glow, next to a Sora "VELOSIFY"
+   wordmark. Requires the Material Symbols Outlined font to be loaded on
+   the host page (Google Fonts URL includes the `.material-symbols-outlined`
+   utility class so the icon span just works). */
+.v2-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;                /* matches landing's Tailwind gap-2 */
+  text-decoration: none;
+  color: inherit;
+  line-height: 1;
+  position: relative;       /* anchor for the ::before glow halo */
+  isolation: isolate;       /* contain the blur, don't bleed into siblings */
+}
+/* Subtle purple glow halo behind every Velosify banner logo sitewide.
+   Soft elliptical blob, blurred and dim — meant to read as ambient
+   atmosphere, not a spotlight. Sized for the typical banner footprint;
+   contexts with a smaller/larger logo just get a tighter/looser halo. */
+.v2-brand::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 175px;
+  height: 56px;
+  background: #8B5CF6;
+  border-radius: 50%;
+  filter: blur(28px);
+  opacity: 0.22;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: -1;
+}
+/* Footers get a quieter glow — tuned-down to 0.10.
+   Covers BOTH the CRM dashboard footer (.app-footer) and the landing
+   footer (Tailwind <footer>) via descendant selector. */
+footer .v2-brand::before { opacity: 0.10; }
+.v2-brand .material-symbols-outlined {
+  font-weight: 700;        /* matches landing's font-bold */
+  color: #8B5CF6;          /* plasma-purple */
+  filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.4));  /* glow-accent */
+}
+.v2-brand-word {
+  font-family: "Sora", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  font-size: 20px;         /* matches landing's text-xl */
+  font-weight: 700;
+  letter-spacing: 0.1em;   /* matches landing's tracking-widest */
+  color: #ffffff;
+}
+/* Large variant — used on standalone auth/billing cards where the brand
+   has its own row above the form and needs presence. */
+.v2-brand-lg .material-symbols-outlined { font-size: 40px; }
+/* velosify-logo.png is the full 693x100 brand banner — rocket AND
+   VELOSIFY wordmark combined. Height-driven sizing keeps the native
+   6.93:1 aspect ratio. The separate <span>VELOSIFY</span> text is
+   hidden because the PNG already contains the wordmark. */
+.v2-brand .v2-rocket {
+  width: auto;
+  height: 28px;
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.4));
+}
+.v2-brand-lg .v2-rocket {
+  width: auto;
+  height: 44px;
+}
+.app-footer-brand .v2-rocket {
+  width: auto;
+  height: 20px;
+}
+/* Auth + billing pages — smaller wordmark than the default v2-brand-lg. */
+.login-brand .v2-rocket { height: 28px; }
+.billing-nav .v2-rocket { height: 20px; }
+.v2-brand .v2-brand-word,
+.v2-brand-lg .v2-brand-word,
+.app-footer-brand .v2-brand-word { display: none; }
+
+/* Sidebar variant — slightly tighter for the dashboard left rail.
+   The ambient purple glow halo lives on the base .v2-brand rule above,
+   so the sidebar inherits it automatically. */
+.v2-brand-sidebar {
+  padding: 2px 0 6px;
+  display: flex;
+  justify-content: center;       /* center the rocket+wordmark in the sidebar box */
+}
+.v2-brand-sidebar .v2-rocket { height: 22px; }   /* smaller than default 28px */
+
+/* Project switcher */
+.project-switcher { padding: 0 4px 8px; position: relative; }
+.project-switcher-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 4px 6px;
+}
+.project-switcher-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.project-switcher-btn:hover { border-color: var(--brand); }
+.project-switcher-caret { color: var(--text-dim); font-size: 10px; }
+.project-switcher-menu {
+  position: absolute;
+  top: 100%;
+  left: 4px; right: 4px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  z-index: 30;
+  padding: 6px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.project-switcher-menu[hidden] { display: none !important; }
+.project-switcher-menu button {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.project-switcher-menu button:hover { background: var(--bg-elev-2); }
+.project-switcher-menu button.active {
+  background: linear-gradient(135deg, rgba(91,114,255,0.15), rgba(139,92,246,0.1));
+  color: var(--text);
+}
+.project-switcher-menu button .check { color: var(--brand); font-size: 11px; }
+.project-switcher-menu .menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+.project-switcher-menu .menu-action {
+  color: var(--brand);
+  font-weight: 500;
+}
+
+/* Projects view */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.project-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.project-card.active {
+  border-color: rgba(91,114,255,0.4);
+  background: linear-gradient(135deg, rgba(91,114,255,0.06), rgba(139,92,246,0.04));
+}
+.project-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.project-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.project-card-default-pill {
+  background: rgba(91,114,255,0.18);
+  color: #c7d2fe;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.project-card-active-pill {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+/* "Shared by X" pill on cards for projects shared WITH the current user. */
+.project-card-shared-pill {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-card.shared { border-color: rgba(139, 92, 246, 0.25); }
+
+/* ========== Projects view: My / Shared section split ========== */
+.projects-section { margin-bottom: 28px; }
+.projects-section:last-child { margin-bottom: 0; }
+.projects-section-header {
+  margin: 4px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.projects-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+.projects-section-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 4px 0 0;
+}
+/* "+ Create shared project" card — slightly distinct from "+ New project". */
+.project-card-create-shared {
+  border-style: dashed;
+  border-color: rgba(139, 92, 246, 0.45);
+  color: #c4b5fd;
+}
+.project-card-create-shared:hover {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.65);
+}
+
+/* ========== Pending share invitations banner (Projects view) ========== */
+.pending-shares-banner {
+  margin: 4px 0 18px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(91, 114, 255, 0.08));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 14px;
+}
+.pending-shares-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.pending-shares-list { display: flex; flex-direction: column; gap: 8px; }
+.pending-share-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.pending-share-info { font-size: 13.5px; color: var(--text); line-height: 1.45; flex: 1; min-width: 220px; }
+.pending-share-info strong { color: #fff; font-weight: 600; }
+.pending-share-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ========== Share Project modal ========== */
+.share-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(2, 4, 10, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.share-modal {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: rgba(14, 12, 28, 0.95);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 60px rgba(139, 92, 246, 0.08);
+}
+.share-modal-close {
+  position: absolute; top: 12px; right: 14px;
+  background: transparent; border: none; color: rgba(255,255,255,0.45);
+  font-size: 24px; line-height: 1; cursor: pointer; padding: 4px 8px;
+}
+.share-modal-close:hover { color: #fff; }
+.share-modal-title {
+  font-size: 18px; font-weight: 700; color: #fff;
+  margin: 0 28px 6px 0; letter-spacing: -0.01em;
+}
+.share-modal-hint {
+  font-size: 13px; color: var(--text-dim);
+  margin: 0 0 18px; line-height: 1.5;
+}
+.share-modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.share-modal-field label {
+  font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.share-modal-field input {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px; font-size: 14px; outline: none;
+  font-family: inherit;
+}
+.share-modal-field input:focus { border-color: var(--brand); }
+.share-modal-result {
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 4px 0 8px;
+}
+.share-modal-result.share-ok  { background: rgba(34, 197, 94, 0.12);  color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }
+.share-modal-result.share-err { background: rgba(239, 68, 68, 0.12);  color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+.share-modal-section { margin-top: 18px; }
+.share-modal-section-label {
+  font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.share-modal-list { display: flex; flex-direction: column; gap: 6px; }
+.share-modal-empty {
+  font-size: 12.5px; color: var(--text-dim);
+  padding: 12px; background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 10px; text-align: center;
+}
+.share-modal-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+.share-modal-row-info { flex: 1; min-width: 0; }
+.share-modal-row-name { font-size: 13px; font-weight: 600; color: #fff; }
+.share-modal-row-meta {
+  font-size: 11.5px; color: var(--text-dim); margin-top: 2px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.share-pending-pill {
+  background: rgba(234, 179, 8, 0.18);
+  color: #fde68a;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.share-modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  margin-top: 22px;
+}
+
+/* ---------- Support page ---------- */
+.support-wrap {
+  max-width: var(--view-card-max-width);
+  margin: 8px auto 24px;
+}
+.support-card h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.support-card textarea {
+  width: 100%;
+  resize: none;
+  min-height: 200px;
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.support-card textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+}
+.support-card .settings-actions {
+  margin-top: 20px;
+}
+
+/* ---- Admin Panel: user reference IDs ---- */
+.user-ref-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* ---- Admin Panel: plan pills ---- */
+.plan-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.plan-pill.plan-founder {
+  background: rgba(250, 204, 21, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+.plan-pill.plan-active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+.plan-pill.plan-trial {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+.plan-pill.plan-expired {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+.plan-pill.plan-none {
+  background: rgba(139, 147, 167, 0.12);
+  color: var(--text-dim);
+  border: 1px solid rgba(139, 147, 167, 0.25);
+}
+.project-card-stats {
+  display: flex;
+  gap: 14px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.project-card-stats span strong { color: var(--text); font-weight: 600; }
+.project-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+.project-card-actions .btn { font-size: 12px; padding: 6px 10px; }
+.project-card-create {
+  border-style: dashed;
+  background: transparent;
+  color: var(--brand);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 140px;
+  font-family: inherit;
+  border-radius: var(--radius);
+}
+.project-card-create:hover {
+  background: var(--bg-elev);
+  border-color: var(--brand);
+}
+
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  background: transparent; border: none; color: var(--text-dim);
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  text-align: left; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; gap: 10px;
+  transition: background .15s, color .15s;
+}
+/* Honor the HTML hidden attribute — display:flex above otherwise wins,
+   which is why admin-only items leaked to non-admins. */
+.nav-item[hidden] { display: none !important; }
+.nav-item:hover { background: var(--bg-elev-2); color: var(--text); }
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(99,102,241,0.3);
+}
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: var(--brand);
+  font-size: 14px;
+  line-height: 1;
+}
+/* Inline SVG icons (deals/contacts/companies/etc.) inherit nav-icon color
+   and scale to fit the box. */
+.nav-icon svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+/* Section header inside the nav (e.g. "Lead Generator") — clickable button
+   that expands/collapses its child sub-items. Styled to match .nav-item so
+   it sits naturally in the sidebar. */
+.nav-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  user-select: none;
+  transition: background .15s, color .15s;
+}
+.nav-section-header:hover {
+  background: var(--bg-elev-2);
+  color: var(--text);
+}
+.nav-section-header .nav-icon { color: var(--brand); }
+.nav-section-label { flex: 1; }
+.nav-section-caret {
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: transform .18s ease;
+  transform: rotate(0deg);
+}
+/* When the section is collapsed, rotate the chevron to point right. */
+.nav-section-header[aria-expanded="false"] .nav-section-caret {
+  transform: rotate(-90deg);
+}
+
+/* Container for the indented children. Smooth height transition on
+   collapse/expand. */
+.nav-section-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  /* Each .nav-sub is ~36px tall + 2px gap. 320px comfortably fits 7
+     children with breathing room — leaves headroom for future scripts
+     without revisiting this rule. */
+  max-height: 320px;
+  transition: max-height .2s ease, opacity .15s ease;
+}
+.nav-section-children.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Indented children under a nav section header. */
+.nav-item.nav-sub {
+  padding-left: 44px;            /* sits comfortably right of the section icon */
+  font-size: 13px;
+}
+.nav-item.nav-sub::before {
+  content: "•";
+  color: var(--text-dim);
+  margin-right: 10px;
+  margin-left: -16px;
+  font-size: 14px;
+  line-height: 1;
+}
+.nav-item.nav-sub.active::before {
+  color: var(--brand);
+}
+
+.sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+.user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.user-meta { min-width: 0; }
+.user-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.user-name {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.logout-form { margin: 0; }
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 5px 9px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.logout-btn:hover { color: var(--text); border-color: var(--brand); }
+.kbd-hint {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 12px;
+  background: var(--bg-elev-2);
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+
+/* Billing chip in the sidebar — links to /billing. */
+.billing-chip {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.12);
+  color: #e9d5ff;
+  transition: background 0.15s, border-color 0.15s;
+}
+/* Honor the HTML hidden attribute (display:block above would otherwise win). */
+.billing-chip[hidden] { display: none !important; }
+.billing-chip:hover { background: rgba(139, 92, 246, 0.22); }
+.billing-chip.trial { border-color: rgba(139, 92, 246, 0.55); }
+.billing-chip.active {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.10);
+  color: #bbf7d0;
+}
+.billing-chip.warn {
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+.billing-chip.founder {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.10);
+  color: #fde68a;
+  font-weight: 600;
+}
+.billing-chip.founder:hover {
+  background: rgba(251, 191, 36, 0.18);
+}
+
+/* Top-of-main-pane banner — sits above the topbar in flow so it never
+   overlaps content. Not sticky: it scrolls away naturally (the topbar is
+   sticky, so the user always has nav). */
+.billing-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  font-size: 13px;
+  background: rgba(139, 92, 246, 0.18);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.4);
+  color: #f5f3ff;
+}
+/* Honor the HTML hidden attribute (display:flex above would otherwise win). */
+.billing-banner[hidden] { display: none !important; }
+.billing-banner.warn {
+  background: rgba(239, 68, 68, 0.18);
+  border-bottom-color: rgba(239, 68, 68, 0.5);
+  color: #fee2e2;
+}
+/* Founder's plan — celebratory amber/gold gradient. */
+.billing-banner.founder {
+  background:
+    linear-gradient(90deg,
+      rgba(251, 191, 36, 0.22) 0%,
+      rgba(244, 114, 182, 0.18) 50%,
+      rgba(168, 85, 247, 0.22) 100%);
+  border-bottom-color: rgba(251, 191, 36, 0.5);
+  color: #fde68a;
+}
+.billing-banner.founder span { font-weight: 500; }
+.billing-banner a { color: inherit; text-decoration: underline; font-weight: 600; }
+.billing-banner-close {
+  background: transparent;
+  color: inherit;
+  border: 0;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 8px;
+  cursor: pointer;
+  opacity: 0.75;
+}
+.billing-banner-close:hover { opacity: 1; }
+
+/* Main */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* The sidebar is position: fixed (out of grid flow), so we explicitly
+     anchor <main> to the second grid column — otherwise auto-flow puts
+     it in the first column and squashes it to 240px. */
+  grid-column: 2;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Fixed min-height so every view (Dashboard, Settings, Referrals,
+     etc.) gets an identical topbar — independent of whether the
+     search box, action buttons, or mobile menu-toggle are visible.
+     74px = 38px (tallest possible content: mobile hamburger) + 18px
+     padding top + 18px padding bottom. */
+  min-height: 74px;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(2, 4, 10, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: sticky; top: 0; z-index: 5;
+}
+.topbar h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+/* "+ New list" standalone button is gone from the UI on ALL platforms —
+   the +New list option lives inside the list-select dropdown now. We
+   keep the button in the DOM (hidden) because the dropdown handler
+   programmatically .click()s it to run the existing new-list flow. */
+#list-new-btn { display: none !important; }
+
+/* Action bar on the right of the contacts-header-row — holds the 6
+   contacts-specific actions on desktop. The list-tabs on the left
+   takes the remaining space via flex:1. */
+.contacts-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* On Contacts (any viewport), several topbar buttons hide because their
+   visual home is the contacts-row-actions on the second row instead:
+   - +New (#new-btn) → row's #new-btn-desktop on desktop, kebab on mobile
+   - Import CSV (#import-btn) → row's #import-btn-row on desktop, kebab on mobile
+   - Export CSV (#export-btn) → row's #export-btn-row on desktop, kebab(*) on mobile
+
+   (*) Export is desktop-only on mobile per the kebab spec — kebab doesn't
+   include it. The export-btn hidden attr from per-view JS handles the
+   non-Contacts mobile case (where Export should NOT show in the row). */
+header.topbar[data-view="contacts"] #new-btn,
+header.topbar[data-view="contacts"] #import-btn,
+header.topbar[data-view="contacts"] #export-btn { display: none !important; }
+
+/* ---------------------------------------------------------------
+   Mobile overflow menu — kebab button + dropdown panel that holds
+   secondary toolbar actions on narrow viewports. Desktop hides the
+   whole thing (since the individual buttons are visible there).
+   --------------------------------------------------------------- */
+.overflow-menu { position: relative; display: none; }
+.overflow-toggle {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  padding: 8px 12px;
+  min-width: 0;
+}
+.overflow-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  z-index: 200;
+}
+.overflow-panel[hidden] { display: none; }
+.overflow-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.overflow-item:hover { background: rgba(255, 255, 255, 0.08); }
+.overflow-item span[aria-hidden="true"] { margin-right: 8px; opacity: 0.9; }
+.overflow-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 5px 6px;
+}
+.overflow-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+}
+.overflow-search-icon {
+  font-size: 13px;
+  opacity: 0.7;
+  padding-left: 4px;
+}
+.overflow-search input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+}
+.overflow-search input[type="search"]:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.55);
+}
+
+/* On mobile, the kebab menu shows up — but only when JS hasn't set the
+   HTML hidden attribute on it. The :not([hidden]) guard preserves the
+   per-view show/hide JS toggles. Without it, the @media display:block
+   was overriding the hidden attribute and the kebab leaked onto every
+   mobile view (Dashboard, Pipeline, Settings, etc.). */
+@media (max-width: 720px) {
+  .overflow-menu:not([hidden]) { display: block; }
+}
+#search {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  width: 260px;
+  outline: none;
+}
+#search:focus { border-color: var(--brand); }
+
+.btn {
+  background: var(--bg-elev);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .15s;
+}
+.btn:hover { background: var(--bg-elev-2); }
+.btn:disabled,
+.btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: grayscale(0.4);
+  pointer-events: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(91, 114, 255, 0.35);
+}
+.btn-primary:hover { transform: translateY(-1px); }
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  box-shadow: none;
+}
+.btn-danger { background: var(--danger); color: white; border: none; }
+.btn-danger:hover { filter: brightness(0.9); }
+.btn-success {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.25);
+}
+.btn-success:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn-success:disabled,
+.btn-success[disabled] {
+  box-shadow: none;
+  opacity: 0.7;
+  transform: none;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.btn-ghost:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--bg-elev-2);
+}
+.icon-btn {
+  background: transparent; border: none; color: var(--text-dim);
+  font-size: 22px; cursor: pointer; padding: 4px 8px;
+}
+
+.view { display: none; padding: 24px 28px; }
+.view.active { display: block; }
+
+/* Dashboard KPIs */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.kpi {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 18px;
+}
+.kpi-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.kpi-value { font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: -0.02em; }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.panel h2 { margin: 0 0 16px; font-size: 14px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.panel.span-2 { grid-column: span 2; }
+
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 160px 1fr 80px; align-items: center; gap: 10px; font-size: 13px; }
+.bar-row .bar-label { color: var(--text-dim); }
+.bar-row .bar-track {
+  height: 8px; border-radius: 4px; background: var(--bg-elev-2); overflow: hidden;
+}
+.bar-row .bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+}
+.bar-row .bar-value { text-align: right; font-variant-numeric: tabular-nums; }
+
+.mini-list { display: flex; flex-direction: column; gap: 8px; }
+.mini-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 140px 140px;
+  gap: 12px; align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-elev-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.mini-item .tag { justify-self: start; }
+
+/* Tables */
+.table-wrap {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  overflow-x: auto;       /* allow horizontal scroll for wide / resized tables */
+  overflow-y: visible;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  background: var(--bg-elev-2);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.data-table.sortable th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+  padding-right: 22px;
+}
+.data-table.sortable th[data-sort]:hover {
+  color: var(--text);
+}
+/* No sort arrow by default — pseudo-element doesn't even render. Only the
+   actively-sorted column gets one. (Avoids stray glyphs at small sizes.) */
+.data-table.sortable th[data-sort]::after { display: none; }
+.data-table.sortable th.sort-asc::after,
+.data-table.sortable th.sort-desc::after {
+  display: block;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--brand);
+}
+.data-table.sortable th.sort-asc::after  { content: "↑"; }
+.data-table.sortable th.sort-desc::after { content: "↓"; }
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  /* Top-align so multi-line cells (Notes column wraps up to 3 lines)
+     line up with the rest of the row's single-line cells visually. */
+  vertical-align: top;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover { background: var(--bg-elev-2); cursor: pointer; }
+
+/* Phone, email, and website links in the contacts table — tappable on mobile. */
+.phone-link, .email-link, .website-link {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border);
+  padding: 2px 0;
+  transition: color .12s, border-color .12s;
+}
+.phone-link:hover, .email-link:hover, .website-link:hover {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+.website-link {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+@media (hover: none) {
+  .phone-link, .email-link, .website-link {
+    color: var(--brand);
+    border-bottom-color: rgba(91, 114, 255, 0.4);
+  }
+}
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* ===========================================================
+   Google Places review intel — columns populated by Lead Gen
+   =========================================================== */
+
+/* Address: subtle Google-Maps link. Reads as plain text until hover so
+   it doesn't compete with the more important Company / Name columns. */
+.address-link {
+  color: var(--text-dim);
+  text-decoration: none;
+}
+.address-link:hover {
+  color: #c4b5fd;
+  text-decoration: underline;
+}
+
+/* Reviews count: tier the color so high-value (50+) leads stand out. */
+.reviews-high { color: #c4b5fd; font-weight: 600; }     /* 50+ reviews — purple-tinted, bold */
+.reviews-mid  { color: var(--text); font-weight: 500; } /* 10-49 — normal text */
+.reviews-low  { color: var(--text-dim); }               /* <10 — dim, deprioritized visually */
+
+/* Rating stars: green for ≥4.5, neutral for 3.5-4.5, red for <3.5 */
+.rating-good { color: #4ade80; }
+.rating-ok   { color: var(--text); }
+.rating-bad  { color: #f87171; }
+.rating-num {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+  font-weight: 500;
+}
+
+/* Business status: only rendered for non-operational states, so the
+   column reads as empty for healthy leads and lit up for problems. */
+.biz-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+/* Subtle green for the common "Open" case — present enough that the
+   column reads as "we have data" but quiet enough that it doesn't
+   compete with Reviews / Rating for attention. */
+.biz-status.biz-open {
+  background: rgba(34, 197, 94, 0.10);
+  color: #86efac;
+  font-weight: 500;
+}
+.biz-status.biz-unknown {
+  color: var(--text-dim);
+  background: transparent;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.biz-status.biz-temp {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fcd34d;
+}
+.biz-status.biz-perm {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  text-decoration: line-through;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(99,102,241,0.15);
+  color: #c7d2fe;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 4px;
+}
+.tag.green { background: rgba(34,197,94,0.15); color: #bbf7d0; }
+.tag.orange { background: rgba(245,158,11,0.15); color: #fde68a; }
+.tag.red { background: rgba(239,68,68,0.15); color: #fecaca; }
+.tag.cyan { background: rgba(6,182,212,0.15); color: #a5f3fc; }
+.tag.purple { background: rgba(168,85,247,0.15); color: #e9d5ff; }
+
+/* Wrapper that stacks the line-type badge above its carrier name. The
+   carrier line is what lets a user tell a real Verizon Wireless mobile
+   apart from an OpenPhone/Bandwidth "mobile" that's actually a business
+   VoIP softphone with an IVR. Critical for the Power Dialer workflow. */
+.phone-type-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  line-height: 1;
+}
+.phone-type-carrier {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  font-weight: 500;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Phone line-type badges. Click a `.clickable` badge to cycle through. */
+.phone-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  user-select: none;
+}
+.phone-type.clickable {
+  cursor: pointer;
+  transition: filter 120ms, transform 120ms;
+}
+.phone-type.clickable:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+.phone-type.mobile {
+  background: rgba(34,197,94,0.18);
+  color: #bbf7d0;
+  border: 1px solid rgba(34,197,94,0.35);
+}
+.phone-type.landline {
+  background: rgba(148,163,184,0.18);
+  color: #cbd5e1;
+  border: 1px solid rgba(148,163,184,0.35);
+}
+.phone-type.voip {
+  background: rgba(245,158,11,0.18);
+  color: #fde68a;
+  border: 1px solid rgba(245,158,11,0.35);
+}
+.phone-type.tollfree {
+  background: rgba(99,102,241,0.18);
+  color: #c7d2fe;
+  border: 1px solid rgba(99,102,241,0.35);
+}
+.phone-type.premium {
+  background: rgba(168,85,247,0.18);
+  color: #e9d5ff;
+  border: 1px solid rgba(168,85,247,0.35);
+}
+.phone-type.invalid {
+  background: rgba(239,68,68,0.18);
+  color: #fecaca;
+  border: 1px solid rgba(239,68,68,0.35);
+}
+.phone-type.unknown,
+.phone-type.unclassified {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+  border: 1px dashed rgba(255,255,255,0.18);
+}
+
+/* ---- Row selection (bulk actions) ---- */
+/* (Padding for select-col in resizable tables is set in the resizable-cols
+   block below — keep this rule out of the way to avoid conflicts.) */
+
+/* Themed checkbox — replaces the native browser checkbox so it matches
+   the Velosify gradient instead of the system white box. */
+.data-table input[type="checkbox"].row-select,
+.data-table input[type="checkbox"].co-row-select,
+.data-table input[type="checkbox"]#select-all-contacts,
+.data-table input[type="checkbox"]#select-all-companies {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(139,92,246,0.45);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+}
+.data-table input[type="checkbox"].row-select:hover,
+.data-table input[type="checkbox"].co-row-select:hover,
+.data-table input[type="checkbox"]#select-all-contacts:hover,
+.data-table input[type="checkbox"]#select-all-companies:hover {
+  background: rgba(139,92,246,0.14);
+  border-color: rgba(139,92,246,0.85);
+}
+.data-table input[type="checkbox"].row-select:focus-visible,
+.data-table input[type="checkbox"].co-row-select:focus-visible,
+.data-table input[type="checkbox"]#select-all-contacts:focus-visible,
+.data-table input[type="checkbox"]#select-all-companies:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139,92,246,0.45);
+}
+.data-table input[type="checkbox"].row-select:checked,
+.data-table input[type="checkbox"].co-row-select:checked,
+.data-table input[type="checkbox"]#select-all-contacts:checked,
+.data-table input[type="checkbox"]#select-all-companies:checked {
+  background: linear-gradient(135deg, #5b72ff 0%, #8b5cf6 100%);
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(139,92,246,0.35);
+}
+.data-table input[type="checkbox"].row-select:checked::after,
+.data-table input[type="checkbox"].co-row-select:checked::after,
+.data-table input[type="checkbox"]#select-all-contacts:checked::after,
+.data-table input[type="checkbox"]#select-all-companies:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.data-table input[type="checkbox"]#select-all-contacts:indeterminate,
+.data-table input[type="checkbox"]#select-all-companies:indeterminate {
+  background: linear-gradient(135deg, #5b72ff 0%, #8b5cf6 100%);
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(139,92,246,0.35);
+}
+.data-table input[type="checkbox"]#select-all-contacts:indeterminate::after,
+.data-table input[type="checkbox"]#select-all-companies:indeterminate::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 7px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+.data-table input[type="checkbox"].row-select:active,
+.data-table input[type="checkbox"].co-row-select:active,
+.data-table input[type="checkbox"]#select-all-contacts:active,
+.data-table input[type="checkbox"]#select-all-companies:active {
+  transform: scale(0.92);
+}
+
+.data-table tbody tr.row-selected {
+  background: rgba(99,102,241,0.10);
+}
+.data-table tbody tr.row-selected:hover {
+  background: rgba(99,102,241,0.15);
+}
+/* Compact checkbox column for non-resizable tables (e.g. Companies). */
+.data-table th.col-select,
+.data-table td.col-select {
+  width: 40px;
+  padding-left: 14px;
+  padding-right: 4px;
+  text-align: center;
+}
+
+/* ---- Contacts header row (list pills + Custom Columns button) ---- */
+.contacts-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.contacts-header-row .list-tabs {
+  margin-bottom: 0;        /* parent already provides spacing */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.contacts-header-row #custom-columns-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* ---- Custom Columns picker (modal) ---- */
+.column-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: fadeIn 140ms ease;
+}
+.column-picker-backdrop.hidden { display: none; }
+
+.column-picker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, 92vw);
+  max-height: 86vh;
+  background: var(--bg-elev);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: popIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.column-picker.hidden { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.column-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.column-picker-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.column-picker-hint {
+  padding: 12px 20px 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.column-picker-list {
+  flex: 1 1 auto;
+  padding: 8px 12px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.column-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 120ms;
+  user-select: none;
+}
+.column-picker-row:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+.column-picker-label {
+  flex: 1;
+}
+
+/* Themed checkbox in the picker — same gradient style as row checkboxes. */
+.column-picker input[type="checkbox"].column-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(139, 92, 246, 0.45);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  flex: 0 0 auto;
+  transition: background 120ms, border-color 120ms, box-shadow 120ms;
+}
+.column-picker input[type="checkbox"].column-toggle:hover {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.85);
+}
+.column-picker input[type="checkbox"].column-toggle:checked {
+  background: linear-gradient(135deg, #5b72ff 0%, #8b5cf6 100%);
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+.column-picker input[type="checkbox"].column-toggle:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.column-picker-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  gap: 8px;
+}
+
+/* Custom column row affordances inside the picker */
+.column-picker-custom-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.18);
+  color: #e9d5ff;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.column-picker-rename,
+.column-picker-delete {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.column-picker-rename:hover {
+  color: var(--text);
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+.column-picker-delete:hover {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* "+ Add custom column" button at the bottom of the picker list */
+.column-picker-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(139, 92, 246, 0.08);
+  color: #e9d5ff;
+  border: 1px dashed rgba(139, 92, 246, 0.5);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 120ms, border-color 120ms, transform 80ms;
+}
+.column-picker-add:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.85);
+}
+.column-picker-add:active { transform: scale(0.98); }
+.column-picker-add .cpa-plus {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* Custom column cells in the contacts table */
+.data-table.resizable-cols td.custom-col {
+  color: var(--text);
+}
+.data-table.resizable-cols td.custom-col .custom-empty {
+  color: rgba(255, 255, 255, 0.18);
+}
+
+/* Built-in Notes column — auto-summarizes the latest call's outcome,
+   duration, and notes. Multi-line clamp lets text wrap up to 3 lines
+   so users can actually read short call notes inline (was clipping
+   mid-word at the column boundary before). Hovering still shows the
+   full text in the title tooltip. */
+.cell-notes {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;     /* only one block now — newlines inside it can collapse */
+  word-break: break-word;
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.notes-outcome {
+  color: #c7d2fe;
+  font-weight: 600;
+}
+.notes-duration {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.notes-text {
+  color: var(--text);
+}
+.notes-text.notes-general {
+  color: var(--text-dim);
+  font-style: italic;
+}
+/* Bold + plasma-purple highlight on the "📞 Power Dial" marker so cold
+   callers instantly spot the most recent call session in a long notes
+   column. Override .notes-general's italic so the marker still reads
+   upright + decisive. */
+.notes-power-dial {
+  font-weight: 700;
+  color: #C4A3FF;
+  font-style: normal;
+}
+.notes-divider {
+  color: rgba(139, 92, 246, 0.45);
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+.notes-sep {
+  color: var(--text-dim);
+  opacity: 0.5;
+  margin: 0 2px;
+}
+
+/* "Logged" state for the Log Call button — appears once a call has been
+   recorded against the contact, so the user can scan the column and see
+   who they've already reached out to. */
+/* Lock the button to a consistent width regardless of state so the
+   right edge of the column lines up across every row (otherwise the
+   "Log" and "✓ Logged" variants render at slightly different widths,
+   creating a visible jagged edge on mobile). */
+.btn.log-call-btn {
+  min-width: 92px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  box-sizing: border-box;
+}
+.btn.log-call-btn.logged {
+  background: rgba(34, 197, 94, 0.15);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  font-weight: 600;
+}
+.btn.log-call-btn.logged:hover {
+  background: rgba(34, 197, 94, 0.25);
+  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+/* ---- Lead Generator view ---- */
+.leadgen-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 28px 22px;
+  max-width: var(--view-card-max-width);
+  margin: 0 auto;
+  box-shadow: var(--shadow);
+}
+.leadgen-card h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.leadgen-hint {
+  margin: 0 0 22px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.leadgen-form .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .leadgen-form .form-grid { grid-template-columns: 1fr; }
+}
+.leadgen-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+.leadgen-actions .btn-primary {
+  min-width: 180px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.leadgen-result {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 197, 94, 0.10);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.leadgen-result.hidden { display: none; }
+.leadgen-result.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.leadgen-result a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+.leadgen-result a:hover { text-decoration: underline; }
+
+/* Tier badge in the header — "Free" or "⚡ Pro" */
+.leadgen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.leadgen-header h2 { margin: 0; }
+.leadgen-tier-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  white-space: nowrap;
+}
+.leadgen-tier-badge.pro {
+  background: linear-gradient(135deg, rgba(91,114,255,0.3), rgba(139,92,246,0.3));
+  color: #f0abfc;
+  border-color: rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.25);
+}
+
+/* Upgrade card — visible when on the free tier */
+.leadgen-upgrade {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(91,114,255,0.08), rgba(139,92,246,0.08));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.leadgen-upgrade.hidden { display: none; }
+.leadgen-upgrade-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.leadgen-upgrade-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.leadgen-pro-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: #fff;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.leadgen-upgrade p { margin: 8px 0; color: var(--text); }
+.leadgen-upgrade strong { color: #f0abfc; }
+.leadgen-upgrade code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+.leadgen-upgrade a { color: var(--brand); text-decoration: none; }
+.leadgen-upgrade a:hover { text-decoration: underline; }
+.leadgen-howto {
+  margin: 10px 0 4px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.leadgen-howto summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  user-select: none;
+}
+.leadgen-howto[open] summary { margin-bottom: 8px; }
+.leadgen-howto ol {
+  margin: 6px 0 6px 22px;
+  padding: 0;
+  color: var(--text-dim);
+}
+.leadgen-howto li { margin: 4px 0; }
+.leadgen-upgrade-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Pro card — visible when the user has a key on file */
+.leadgen-pro {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.leadgen-pro.hidden { display: none; }
+.leadgen-pro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.leadgen-pro-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #bbf7d0;
+}
+.leadgen-pro p { margin: 6px 0; color: var(--text); }
+.leadgen-pro code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: #bbf7d0;
+}
+.leadgen-pro-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Modal: section divider ("Custom fields" header inside the contact form) */
+.form-section-divider {
+  grid-column: 1 / -1;
+  margin: 16px 0 6px;
+  padding-bottom: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Small inline hint shown under a form field (e.g. "Saved on the linked
+   company X"). */
+.field-help {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Recent calls list inside the contact modal — each call is a clickable
+   button that opens the activity for editing. */
+.contact-call-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-call-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background 120ms, border-color 120ms;
+}
+.contact-call-row:hover {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+.contact-call-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.contact-call-body {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.contact-call-more {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 6px;
+  font-style: italic;
+}
+
+/* ---- Resizable / draggable columns (contacts table) ---- */
+.data-table.resizable-cols {
+  table-layout: fixed;  /* widths come from <colgroup> */
+  width: auto;          /* JS sets exact width = sum of column widths */
+  border-collapse: collapse;
+}
+.data-table.resizable-cols th,
+.data-table.resizable-cols td {
+  /* Smaller padding so a 60–80px column has real visible content area */
+  padding: 12px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+/* Cells that need extra breathing room get more padding by class. */
+.data-table.resizable-cols td .tag,
+.data-table.resizable-cols td .phone-type {
+  max-width: 100%;
+}
+
+.data-table.resizable-cols th {
+  position: relative;
+  user-select: none;
+}
+/* Sortable headers in a resizable table — leave room for both the sort
+   arrow (only visible on the active sort) and the resize grabber. */
+.data-table.resizable-cols.sortable th[data-sort] {
+  padding-right: 26px;
+}
+.data-table.resizable-cols.sortable th[data-sort]::after {
+  right: 14px;  /* leaves the rightmost ~12px clear for .col-resize */
+}
+
+/* The select column (anchored, narrow). Tight padding so the 18px
+   checkbox actually fits in the visible area. */
+.data-table.resizable-cols th.select-col,
+.data-table.resizable-cols td.select-col {
+  padding: 12px 0;
+  text-align: center;
+  overflow: visible;  /* don't clip the checkbox */
+}
+
+/* ---- Pin the first (select) and last (Log Call) columns ----
+   When the user resizes the middle columns wide enough that the table needs
+   to scroll horizontally, these stay anchored to the left/right edges so
+   bulk-select and the Log button are always reachable. */
+.data-table.resizable-cols th[data-col-id="select"],
+.data-table.resizable-cols td[data-col-id="select"] {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: var(--bg-elev);
+  border-right: 1px solid var(--border);
+}
+.data-table.resizable-cols th[data-col-id="actions"],
+.data-table.resizable-cols td[data-col-id="actions"] {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background-color: var(--bg-elev);
+  border-left: 1px solid var(--border);
+}
+/* Headers sit above body cells when scrolling vertically. */
+.data-table.resizable-cols th[data-col-id="select"],
+.data-table.resizable-cols th[data-col-id="actions"] {
+  background-color: var(--bg-elev-2);
+  z-index: 3;
+}
+/* Sticky cells need an opaque background to occlude scrolled content, but
+   that means row hover/selected states (which sit on the <tr>) don't show
+   through. Re-apply those colors per-cell for the pinned columns. */
+.data-table.resizable-cols tbody tr:hover td[data-col-id="select"],
+.data-table.resizable-cols tbody tr:hover td[data-col-id="actions"] {
+  background-color: var(--bg-elev-2);
+}
+.data-table.resizable-cols tbody tr.row-selected td[data-col-id="select"],
+.data-table.resizable-cols tbody tr.row-selected td[data-col-id="actions"] {
+  /* Layer the indigo selection tint on top of the opaque cell bg so it
+     matches the rest of the selected row visually. */
+  background-image: linear-gradient(rgba(99, 102, 241, 0.10), rgba(99, 102, 241, 0.10));
+}
+.data-table.resizable-cols tbody tr.row-selected:hover td[data-col-id="select"],
+.data-table.resizable-cols tbody tr.row-selected:hover td[data-col-id="actions"] {
+  background-image: linear-gradient(rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.15));
+  background-color: var(--bg-elev-2);
+}
+
+/* Mobile: drop the sticky pinning. Phone screens don't have enough width
+   to spare for two pinned columns, and horizontal scrolling already works
+   naturally — the user just swipes. */
+@media (max-width: 768px) {
+  .data-table.resizable-cols th[data-col-id="select"],
+  .data-table.resizable-cols td[data-col-id="select"],
+  .data-table.resizable-cols th[data-col-id="actions"],
+  .data-table.resizable-cols td[data-col-id="actions"] {
+    position: static;
+    z-index: auto;
+    border-left: 0;
+    border-right: 0;
+    background-color: transparent;
+    background-image: none;
+  }
+  /* Restore default header bg on mobile (since we cleared it above). */
+  .data-table.resizable-cols th[data-col-id="select"],
+  .data-table.resizable-cols th[data-col-id="actions"] {
+    background-color: var(--bg-elev-2);
+  }
+}
+
+.data-table.resizable-cols th[draggable="true"] {
+  cursor: grab;
+}
+.data-table.resizable-cols th[draggable="true"]:active {
+  cursor: grabbing;
+}
+.data-table.resizable-cols th .th-label {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Resize grabber — wider hit area, visible vertical bar on hover. */
+.data-table.resizable-cols th .col-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 3;
+}
+/* Resize indicator is invisible until you hover the column header — this
+   keeps the header row clean and only reveals the grabbers when relevant. */
+.data-table.resizable-cols th .col-resize::after { display: none; }
+.data-table.resizable-cols th:hover .col-resize::after,
+.data-table.resizable-cols th .col-resize:hover::after {
+  content: "";
+  display: block;
+  position: absolute;
+  right: 4px;
+  top: 22%;
+  height: 56%;
+  width: 2px;
+  background: rgba(139, 92, 246, 0.55);
+  border-radius: 1px;
+}
+.data-table.resizable-cols th .col-resize:hover::after {
+  background: rgba(139, 92, 246, 0.95);
+  top: 18%;
+  height: 64%;
+}
+body.col-resizing { cursor: col-resize !important; user-select: none; }
+body.col-resizing * { cursor: col-resize !important; }
+
+.data-table.resizable-cols th.col-dragging {
+  opacity: 0.55;
+}
+.data-table.resizable-cols th.col-drop-target {
+  box-shadow: inset 3px 0 0 0 #8b5cf6;
+}
+.data-table.resizable-cols th.col-drop-target:last-child {
+  box-shadow: inset -3px 0 0 0 #8b5cf6;
+}
+
+/* Floating selection action bar — sticks to the bottom of the contacts view */
+.selection-bar {
+  /* Floats above the page so the user never has to scroll to the
+     bottom of the list to apply bulk actions. Anchored to the
+     viewport, right of the fixed sidebar (240px), with breathing
+     room on the right edge. Animates in/out from below. */
+  position: fixed;
+  bottom: 16px;
+  left: calc(240px + 16px);
+  right: 16px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(91,114,255,0.18), rgba(139,92,246,0.18));
+  border: 1px solid rgba(139,92,246,0.4);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  z-index: 50;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.selection-bar.hidden {
+  /* Slide off-screen instead of display:none so the bar can animate
+     back in cleanly when the user selects again. */
+  display: flex;
+  transform: translateY(calc(100% + 24px));
+  opacity: 0;
+  pointer-events: none;
+}
+.selection-bar-count {
+  font-weight: 600;
+  font-size: 14px;
+  color: #e9d5ff;
+  white-space: nowrap;
+}
+.selection-bar-count #selection-count {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-right: 4px;
+}
+.selection-bar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+  .selection-bar {
+    /* Sidebar becomes a drawer on mobile, so the bar can use the
+       full width. Slightly tighter to the edges since real estate
+       is limited. */
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  /* Grid (not flex-grow) so buttons don't stretch to fill height. Two
+     columns at small widths, gracefully wraps to 1 col on tiny phones. */
+  .selection-bar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+  .selection-bar-actions .btn {
+    flex: initial;       /* drop any inherited flex sizing */
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 12px;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 420px) {
+  .selection-bar-actions {
+    grid-template-columns: 1fr;  /* full-width rows on tiny phones */
+  }
+}
+
+/* Kanban */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(220px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+}
+.kanban-col {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+}
+.kanban-col.drag-over { box-shadow: inset 0 0 0 2px var(--brand); }
+.kanban-col-header {
+  padding: 14px 14px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.kanban-col-header .stage-name { font-weight: 600; font-size: 13px; }
+.kanban-col-header .stage-sum { color: var(--text-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
+.kanban-col-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+.deal-card {
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: grab;
+  transition: transform .1s;
+}
+.deal-card:hover { border-color: var(--brand); }
+.deal-card:active { cursor: grabbing; }
+.deal-card.dragging { opacity: 0.4; }
+.deal-card-title { font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+.deal-card-meta { font-size: 11px; color: var(--text-dim); display: flex; flex-direction: column; gap: 3px; }
+.deal-card-value { color: var(--success); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Modal */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: grid; place-items: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+.modal.hidden { display: none; }
+.modal-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(560px, 92vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+.modal-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 { margin: 0; font-size: 16px; }
+.modal-body { padding: 20px; overflow-y: auto; }
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid .full { grid-column: span 2; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.field input, .field select, .field textarea {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--brand); }
+.field textarea { resize: vertical; min-height: 72px; }
+.field.inline { flex-direction: row; align-items: center; gap: 8px; }
+
+.hidden { display: none !important; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  z-index: 200;
+  font-size: 13px;
+}
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--danger); }
+
+/* CSV drag-and-drop on Contacts view */
+.view.drop-active {
+  outline: 3px dashed var(--brand);
+  outline-offset: -10px;
+  background: rgba(91, 114, 255, 0.05);
+  border-radius: var(--radius);
+}
+.view.drop-active::before {
+  content: "Drop CSV to import contacts";
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-elev);
+  border: 2px solid var(--brand);
+  color: var(--text);
+  padding: 18px 28px;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 600;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+  z-index: 50;
+}
+
+/* List tabs (Contacts view) */
+.list-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+/* Compact list-filter dropdown. Replaces the old per-list pill row so the
+   Contacts header stays tidy when there are many lists. */
+.list-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px 6px 12px;
+  transition: border-color .15s;
+}
+.list-select-wrap:hover { border-color: rgba(192, 132, 252, 0.45); }
+.list-select-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.list-select {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 24px 4px 4px;
+  cursor: pointer;
+  outline: none;
+  /* Custom caret since native one inherits OS color */
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23c084fc' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  min-width: 180px;
+}
+.list-select option {
+  background: var(--bg-elev);
+  color: var(--text);
+}
+
+/* Small-style buttons for list management next to the dropdown */
+.list-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-sm {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  font-weight: 500;
+}
+.btn-danger-soft {
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+}
+.btn-danger-soft:hover {
+  background: rgba(239, 68, 68, 0.20);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+.list-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.list-tab:hover { color: var(--text); border-color: var(--brand); }
+.list-tab.active {
+  background: linear-gradient(135deg, rgba(91,114,255,0.18), rgba(139,92,246,0.12));
+  color: var(--text);
+  border-color: rgba(91,114,255,0.4);
+}
+.list-count {
+  background: var(--bg-elev-2);
+  color: var(--text-dim);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.list-tab.active .list-count {
+  background: rgba(91,114,255,0.3);
+  color: var(--text);
+}
+.list-tab-add {
+  border-style: dashed;
+  color: var(--brand);
+}
+
+/* Settings */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 1100px;
+}
+.settings-card h2 {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.settings-card .form-grid { margin-bottom: 16px; }
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .settings-grid { grid-template-columns: 1fr; }
+}
+
+/* Settings sub-sections — only one visible at a time, controlled by the
+   sidebar's Profile / API Keys / Billing buttons. */
+.settings-section.hidden { display: none; }
+
+/* Single-column variant of .settings-grid for sub-sections that only
+   contain one card (Profile + Change Password merged, API Keys). */
+.settings-grid.settings-grid-single {
+  grid-template-columns: 1fr;
+  max-width: 720px;
+}
+
+/* Divider between the Profile <form> and Change Password <form> living
+   inside the same .settings-card so they read as one unified card. */
+.settings-card-divider {
+  height: 1px;
+  background: var(--border, rgba(255, 255, 255, 0.08));
+  margin: 22px 0 22px;
+}
+
+/* Admin → Create-user form on the Users view */
+.admin-create-user {
+  max-width: 720px;
+  margin: 0 0 22px;
+  padding: 22px 24px;
+}
+.admin-create-user h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.admin-create-user .form-grid { margin-bottom: 14px; }
+.admin-grandfather-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  user-select: none;
+}
+.admin-grandfather-toggle input[type="checkbox"] {
+  accent-color: #c084fc;
+  width: 16px;
+  height: 16px;
+}
+
+/* ---- Scripts view ---- */
+.scripts-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.scripts-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.scripts-tab:hover { color: var(--text); }
+.scripts-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--brand);
+  font-weight: 600;
+}
+
+.script-card {
+  max-width: var(--view-card-max-width);
+  margin: 0 auto 24px;
+  padding: 24px 28px 28px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.script-card.hidden { display: none; }
+
+.script-head {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.script-head h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #e9d5ff 0%, #f0abfc 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.script-tagline {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.script-section { margin-bottom: 22px; }
+.script-section h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.script-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+
+.script-section blockquote {
+  margin: 0 0 10px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  font-style: normal;
+}
+.script-section blockquote em {
+  color: #f0abfc;
+  font-style: normal;
+  font-weight: 500;
+}
+.script-section blockquote strong {
+  color: var(--text);
+  font-weight: 700;
+}
+.script-section blockquote + blockquote { margin-top: 6px; }
+
+.script-note {
+  margin: 6px 4px 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.script-section ul {
+  margin: 4px 0 0;
+  padding-left: 22px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.script-section ul li { margin-bottom: 4px; }
+.script-section ul strong { color: var(--text); font-weight: 600; }
+.script-section p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* Collapsible objection rows */
+.script-objection {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.script-objection[open] {
+  border-color: rgba(192, 132, 252, 0.4);
+}
+.script-objection summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  transition: background .12s;
+}
+.script-objection summary:hover { background: rgba(192, 132, 252, 0.06); }
+.script-objection summary::-webkit-details-marker { display: none; }
+.script-objection summary::before {
+  content: "▸";
+  font-size: 11px;
+  color: var(--brand);
+  width: 12px;
+  flex: 0 0 12px;
+  transition: transform .15s;
+}
+.script-objection[open] summary::before { transform: rotate(90deg); }
+.script-objection p {
+  margin: 0;
+  padding: 0 16px 14px 38px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+}
+.script-objection p em {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.script-dont {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+}
+.script-dont h3 { color: #fca5a5; }
+
+/* App footer — mirrors the V2 landing footer EXACTLY:
+     [brand]          [legal links]          [copy + credit]
+   Three columns. Inherits the body sans-serif (Hanken Grotesk) to
+   match the landing — DO NOT apply JetBrains Mono here, it's the
+   "weird font" you'd be seeing otherwise. */
+.app-footer {
+  margin-top: auto;
+  padding: 36px 40px 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.app-footer-brand {
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+.app-footer-brand:hover { opacity: 1; }
+.app-footer-brand .v2-brand-word { display: none; }
+.app-footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  flex: 1;
+}
+.app-footer-links a {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.app-footer-links a:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+.app-footer-copy-block {
+  text-align: right;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.app-footer-copy   { color: rgba(255, 255, 255, 0.5); margin: 0; }
+.app-footer-credit { color: rgba(255, 255, 255, 0.5); margin-top: 4px; }
+.app-footer-credit-name { color: #ffffff; font-weight: 600; }
+@media (max-width: 720px) {
+  .app-footer {
+    padding: 28px 20px 24px;
+    flex-direction: column;
+    gap: 18px;
+    text-align: center;
+  }
+  .app-footer-copy-block { text-align: center; }
+  .app-footer-links { gap: 12px 22px; }
+}
+
+/* Settings hint text used inside cards (e.g. Billing summary). */
+.settings-hint {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+/* Constrain the Referral Program standalone view to the same width
+   as Lead Generator / Free Game / Support so all single-card "tool"
+   views feel consistent across the app. */
+.settings-section-referrals-standalone {
+  max-width: var(--view-card-max-width);
+  margin: 8px auto 24px;
+}
+
+/* "Want Velosify for FREE?" promo card on Settings → Billing.
+   Lives in the right column of the settings-grid (same cell width as
+   the Billing card). V2 gradient border + soft purple glow.
+   Layout: icon + headline on one row, subhead below, "Learn how →"
+   pinned to the bottom — matches the visual weight of the Billing card
+   it sits next to. */
+.referral-promo-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 22px 24px;
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.10)),
+    rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  box-shadow: 0 4px 24px rgba(139, 92, 246, 0.12);
+}
+.referral-promo-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 10px 36px rgba(139, 92, 246, 0.22);
+}
+.referral-promo-glow {
+  position: absolute;
+  top: -60px; right: -40px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%);
+  filter: blur(20px);
+  pointer-events: none;
+}
+.referral-promo-icon {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.5);
+  margin-bottom: 14px;
+}
+.referral-promo-icon .material-symbols-outlined {
+  font-size: 24px;
+  color: #ffffff;
+}
+.referral-promo-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+.referral-promo-headline {
+  font-family: "Sora", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.referral-promo-accent {
+  background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+.referral-promo-sub {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.referral-promo-cta {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c4a3ff;
+  transition: gap 0.2s ease, color 0.2s ease;
+}
+.referral-promo-card:hover .referral-promo-cta { gap: 10px; color: #ffffff; }
+.referral-promo-cta .material-symbols-outlined { font-size: 18px; }
+
+/* Two-tier intro copy for the Referral Program view: a bigger,
+   heavier headline followed by a smaller muted subhead. */
+.referrals-headline {
+  font-family: "Sora", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.referrals-headline-accent {
+  /* "FREE" gets the plasma-purple → nebula-blue gradient treatment. */
+  background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.referrals-subhead {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0 0 22px;
+}
+
+/* Referrals panel — share link, progress bar, referees list. */
+.referral-card {
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  border-radius: var(--radius);
+  padding: 22px 22px 24px;
+}
+.referral-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.referral-progress-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.referral-progress-count {
+  font-family: "Sora", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.referral-progress-count .ref-count-sep {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.ref-status-pill {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #bbf7d0;
+  vertical-align: middle;
+}
+.referral-progress-bar-wrap {
+  flex: 1;
+  min-width: 200px;
+}
+.referral-progress-bar {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.referral-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+}
+.referral-link-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+}
+.referral-link-row input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+/* Copy button — clipboard icon + "Copy" text. Slight padding tweak
+   so the icon doesn't crowd the text. */
+.ref-copy-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+.ref-copy-btn-icon .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Edit mode for the custom referral code. The URL prefix is rendered
+   as a non-editable visual anchor so the user only types the code half. */
+.referral-edit-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 10px;
+}
+.referral-edit-prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(139, 92, 246, 0.10);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.referral-edit-row input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+.referral-edit-row input:focus {
+  outline: 2px solid rgba(139, 92, 246, 0.5);
+  outline-offset: 1px;
+}
+.referral-share-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+/* Tweet / Text / Email — icon + label, consistent sizing. */
+.ref-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.ref-share-btn .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+}
+.ref-share-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+.referral-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.referral-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.referral-list-item-meta {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.referral-list-item-status {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+}
+.referral-list-item-status.paying {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.16);
+}
+.referral-list-item-status.past_due,
+.referral-list-item-status.cancelled {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.16);
+}
+/* Purple pill matching the Admin Panel's `.plan-pill.plan-trial`
+   styling — same color + tint for "Card pending" so the language and
+   visual stays consistent across the app. */
+.referral-list-item-status.card-pending {
+  color: #c084fc;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+/* Billing card on the Settings page. */
+.billing-card-display {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 0 0 14px;
+}
+.billing-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.billing-card-row + .billing-card-row {
+  border-top: 1px dashed var(--border);
+}
+.billing-card-label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 600;
+}
+.billing-card-value {
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status pill — green for healthy, amber for trial/cancelling,
+   red for past-due/cancelled. Sits on the right side of the
+   Status row. Slight glow + tinted border for definition. */
+.billing-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+.billing-status-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  flex: 0 0 auto;
+}
+.billing-status-ok {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+.billing-status-warn {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+.billing-status-danger {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+.billing-status-neutral {
+  color: var(--text-dim);
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.billing-actions-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Inline "Update card" form (Stripe Payment Element) */
+.billing-update-form {
+  margin-top: 16px;
+}
+.billing-update-form[hidden] { display: none; }
+.billing-update-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 0 16px;
+}
+.billing-update-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.billing-card-element {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  min-height: 56px;
+}
+.billing-card-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #fecaca;
+}
+.billing-card-error[hidden] { display: none; }
+.billing-update-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+/* Game panes — only one rendered at a time, switched via sidebar sub-nav. */
+.freegame-pane[hidden] { display: none; }
+
+/* Lead Sniper canvas can be a bit taller. */
+#sniper-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  cursor: crosshair;
+  touch-action: manipulation;
+  outline: none;
+}
+
+/* ---- Whack-a-Lead legend pills under the canvas ---- */
+.whack-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 14px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.whack-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.whack-legend-dot.whack-hot  { background: #fbbf24; box-shadow: 0 0 6px #f59e0b; }
+.whack-legend-dot.whack-warm { background: #a855f7; box-shadow: 0 0 6px #8b5cf6; }
+.whack-legend-dot.whack-cold { background: #38bdf8; box-shadow: 0 0 6px #0ea5e9; }
+.whack-legend-dot.whack-spam { background: #ef4444; box-shadow: 0 0 6px #b91c1c; }
+
+/* Mute / unmute toggle inside the score row */
+.whack-mute-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.whack-mute-btn:hover {
+  background: rgba(139,92,246,0.10);
+  border-color: rgba(139,92,246,0.4);
+}
+
+/* The Whack canvas is taller than the Runner — let it breathe. */
+#whack-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+/* ---- Free Game (Velosify Runner) ---- */
+.freegame-card {
+  max-width: var(--view-card-max-width);
+  margin: 8px auto 24px;
+  padding: 18px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.freegame-help {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  margin: 14px 0 0;
+}
+.freegame-help kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--text);
+  margin: 0 2px;
+}
+/* Score header — bigger, centered, two big numbers separated by a divider. */
+.freegame-scores {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 32px;
+  margin: 4px 0 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.freegame-score-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 120px;
+}
+.freegame-score-divider {
+  width: 1px;
+  background: var(--border);
+}
+.freegame-score-label {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+.freegame-score {
+  color: var(--text);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color .15s ease, text-shadow .15s ease;
+}
+/* Within ~30 of the high score — yellow/amber tease */
+.freegame-score.freegame-score-near {
+  color: #fde68a;
+}
+/* Met or beat the high score — pink, glowing */
+.freegame-score.freegame-score-beat {
+  color: #f0abfc;
+  text-shadow: 0 0 8px rgba(240, 171, 252, 0.7);
+}
+.freegame-hi { color: #f0abfc; }
+.freegame-divider { color: var(--text-dim); }
+
+.freegame-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(192, 132, 252, 0.3);
+}
+.freegame-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  outline: none;
+  background: #0a0a18;
+}
+.freegame-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(10, 10, 24, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+.freegame-overlay.hidden { display: none; }
+.freegame-overlay-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #e9d5ff 0%, #f0abfc 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.freegame-overlay-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ---- Leaderboard panel ---- */
+.freegame-leaderboard { margin-top: 16px; }
+.freegame-leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.freegame-leaderboard-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.freegame-refresh {
+  padding: 4px 10px;
+  font-size: 14px;
+  line-height: 1;
+}
+.freegame-leaderboard-hint {
+  margin: 0 0 12px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.freegame-leaderboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.freegame-leaderboard-table thead th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.freegame-leaderboard-table .rank-col {
+  width: 56px;
+  text-align: center;
+}
+.freegame-leaderboard-table .score-col {
+  width: 110px;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+/* Header text aligns left — keep the body cells right-aligned so the
+   numerals still stack on the decimal point, but the column label
+   reads left-flush above the data instead of hugging the right edge. */
+.freegame-leaderboard-table thead th.score-col { text-align: left; }
+.freegame-leaderboard-table .when-col {
+  width: 110px;
+  color: var(--text-dim);
+}
+.freegame-leaderboard-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.10);
+}
+.freegame-leaderboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.freegame-leaderboard-table tbody tr.freegame-me-row td {
+  background: rgba(139, 92, 246, 0.18);
+  color: var(--text);
+}
+.freegame-leaderboard-table tbody tr.freegame-me-row .score-col {
+  color: #f0abfc;
+  font-weight: 700;
+}
+.freegame-leaderboard-table tbody tr.freegame-leaderboard-sep td {
+  text-align: center;
+  color: var(--text-dim);
+  letter-spacing: 0.4em;
+  padding: 4px;
+  border-bottom: none;
+}
+.freegame-leaderboard-table .freegame-empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 24px 10px;
+  font-style: italic;
+}
+.freegame-you {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f0abfc;
+  background: rgba(217, 70, 239, 0.18);
+  border: 1px solid rgba(217, 70, 239, 0.45);
+  border-radius: 999px;
+}
+
+/* Hamburger toggle + scrim (hidden on desktop) */
+.menu-toggle {
+  display: none;
+  width: 38px; height: 38px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+.menu-toggle span {
+  display: block;
+  width: 16px; height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+}
+.sidebar-scrim {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 15;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.sidebar-scrim.visible { opacity: 1; }
+.new-btn-short { display: none; }
+.btn-short { display: none; }
+body.no-scroll { overflow: hidden; }
+
+/* ---------- Tablet & below (<=1100px) ---------- */
+@media (max-width: 1100px) {
+  body { grid-template-columns: 210px 1fr; }
+  /* Sidebar shrinks to 210px at this breakpoint — keep it pinned. */
+  .sidebar { width: 210px; }
+  .kpis { grid-template-columns: repeat(3, 1fr); }
+  .kanban { grid-auto-columns: minmax(210px, 1fr); grid-auto-flow: column; grid-template-columns: none; }
+}
+
+/* ---------- Mobile (<=768px) ---------- */
+@media (max-width: 768px) {
+  body {
+    grid-template-columns: 1fr;
+    font-size: 14px;
+  }
+  /* Single column — main no longer needs to be anchored to col 2. */
+  .main { grid-column: auto; }
+
+  /* Sidebar becomes a drawer */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100dvh;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 20;
+    border-right: 1px solid var(--border);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-scrim { display: block; }
+  .sidebar-scrim:not(.visible) { pointer-events: none; }
+
+  /* Topbar */
+  .topbar {
+    padding: 12px 14px;
+    gap: 10px;
+    position: sticky; top: 0;
+  }
+  .topbar h1 { font-size: 18px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .menu-toggle { display: flex; }
+  .topbar-actions { gap: 8px; }
+  #search {
+    width: 150px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  #new-btn { padding: 8px 12px; min-width: 40px; }
+  .new-btn-full { display: none; }
+  .new-btn-short { display: inline; font-size: 18px; line-height: 1; }
+  .btn-full { display: none; }
+  .btn-short { display: inline; font-size: 16px; line-height: 1; }
+  /* On mobile the topbar collapses to: hamburger + title + kebab.
+     Search, Power Dialer hide there. The 4 secondary actions and
+     Custom Columns live in the contacts-header-row on desktop but
+     hide on mobile (they're in the kebab instead). The desktop
+     +New contact (in the second row) hides on mobile — the kebab
+     handles +New there. The Contacts-view-scoped topbar +New hide
+     lives outside this media query so desktop also gets it. */
+  #search,
+  #pd-activate-btn,
+  #import-btn,
+  #export-btn,
+  #import-btn-row,
+  #export-btn-row,
+  #line-type-btn,
+  #verify-mobiles-btn,
+  #custom-columns-btn,
+  #new-btn-desktop,
+  #bulk-pipeline-btn { display: none !important; }
+
+  /* Views */
+  .view { padding: 16px 14px; }
+
+  /* KPIs: 2 cols */
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .kpi { padding: 14px; }
+  .kpi-value { font-size: 22px; }
+  .kpi-label { font-size: 10px; }
+
+  /* Dashboard panels stack */
+  .dash-grid { grid-template-columns: 1fr; gap: 12px; }
+  .panel { padding: 16px; }
+  .panel.span-2 { grid-column: auto; }
+  .panel h2 { font-size: 12px; margin-bottom: 12px; }
+
+  /* Bar chart rows resize */
+  .bar-row { grid-template-columns: 120px 1fr 70px; font-size: 12px; gap: 8px; }
+
+  /* Mini list stacks */
+  .mini-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 12px;
+  }
+  .mini-item .tag { justify-self: start; }
+
+  /* Tables: horizontal scroll within the card */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table { min-width: 640px; }
+  .data-table th, .data-table td { padding: 10px 12px; font-size: 12px; }
+
+  /* Kanban: horizontal swipe with snap */
+  .kanban {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .kanban-col {
+    flex: 0 0 85%;
+    max-width: 320px;
+    scroll-snap-align: start;
+    min-height: 420px;
+  }
+  .deal-card { padding: 10px; }
+  .deal-card-title { font-size: 13px; }
+
+  /* Modal full-height on phone */
+  .modal-card {
+    width: 100vw;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .form-grid { grid-template-columns: 1fr; gap: 12px; }
+  .form-grid .full { grid-column: auto; }
+  .modal-body { padding: 16px; }
+  .modal-footer { padding: 12px 16px; }
+
+  /* Touch targets */
+  .nav-item { padding: 14px 14px; font-size: 15px; }
+  .btn { padding: 10px 14px; font-size: 14px; }
+  .logout-btn { padding: 7px 11px; }
+}
+
+/* ---------- Tiny phones (<=420px) ---------- */
+@media (max-width: 420px) {
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .kpi-value { font-size: 20px; }
+  #search { width: 120px; }
+  .topbar h1 { font-size: 16px; }
+  .bar-row { grid-template-columns: 100px 1fr 64px; }
+  .kanban-col { flex: 0 0 90%; }
+}
+
+/* ---------- API Keys card (Settings → Profile) ---------- */
+.api-keys-card {
+  /* Inherits .panel + .settings-card dark styling already. Add row spacing only. */
+}
+.api-keys-card .settings-hint {
+  margin: -8px 0 14px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.api-key-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0 12px;
+}
+.api-key-meta { flex: 1 1 auto; min-width: 0; }
+.api-key-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.api-key-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(139, 147, 167, 0.15);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.api-key-status.set {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+.api-key-desc {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 540px;
+}
+.api-key-desc strong { color: var(--text); font-weight: 600; }
+.api-key-desc a { color: var(--accent); text-decoration: none; }
+.api-key-desc a:hover { text-decoration: underline; }
+.api-key-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.api-key-edit {
+  margin: 10px 0 6px 0;
+  padding: 14px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.api-key-edit[hidden] { display: none; }
+.api-key-edit input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+.api-key-edit input::placeholder { color: var(--text-dim); opacity: 0.7; }
+.api-key-edit input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+}
+.api-key-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.api-key-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+@media (max-width: 600px) {
+  .api-key-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .api-key-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ============================================================
+   Primary CTA buttons — unified "GET STARTED" treatment used
+   sitewide: hero, pricing, final CTA, signup, login, verify-card.
+   Dim plasma-purple fill, sharp purple border, JetBrains Mono UPPER.
+   ============================================================ */
+/* Slightly bumped specificity (button.shiny-cta) so the inline page-level
+   .login-btn / .verify-btn rules can't accidentally override our padding,
+   font-size, or border-radius. */
+/* Primary CTA — clean "GET STARTED" treatment: dim plasma-purple fill,
+   sharp purple border, JetBrains Mono uppercase. Matches the nav button
+   for sitewide consistency. Works on both <button> and <a> elements. */
+button.shiny-cta,
+a.shiny-cta {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  outline-offset: 4px;
+  padding: 14px 32px !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.2;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  text-decoration: none !important;
+  color: #ffffff !important;
+  background: rgba(139, 92, 246, 0.22) !important;
+  border: 1px solid rgba(139, 92, 246, 0.55) !important;
+  border-radius: 999px !important;
+  white-space: nowrap;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.18);
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+button.shiny-cta:hover,
+a.shiny-cta:hover {
+  background: rgba(139, 92, 246, 0.42);
+  border-color: rgba(139, 92, 246, 0.85);
+  transform: translateY(-1px);
+  box-shadow: 0 0 36px rgba(139, 92, 246, 0.42);
+}
+button.shiny-cta:active,
+a.shiny-cta:active { transform: translateY(0); }
+/* `.full-width` variant — used by login/signup/verify forms where the
+   button should span the form's width instead of being content-sized. */
+.shiny-cta.full-width { width: 100%; }
+
+
+/* =========================================================================
+   POWER DIALER  (inline page — no modal)
+   Section #view-powerdialer toggles between two modes via the data-mode
+   attribute set in JS:
+     [data-mode="setup"]   → .pd-setup visible, .pd-active hidden
+     [data-mode="active"]  → .pd-active visible, .pd-setup hidden
+   ========================================================================= */
+#view-powerdialer[data-mode="setup"]  .pd-active { display: none; }
+#view-powerdialer[data-mode="active"] .pd-setup  { display: none; }
+
+.pd-eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #C4A3FF;
+  margin-bottom: 8px;
+}
+
+/* ---------- SETUP MODE ---------- */
+.pd-setup { max-width: 1100px; }
+.pd-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px;
+  align-items: start;
+  padding: 0 0 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 26px;
+}
+@media (max-width: 900px) { .pd-hero { grid-template-columns: 1fr; } }
+.pd-title {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.pd-subtitle {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 560px;
+}
+.pd-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(86px, 1fr));
+  gap: 10px;
+  align-self: end;
+}
+@media (max-width: 600px) { .pd-hero-stats { grid-template-columns: repeat(2, 1fr); } }
+.pd-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 86px;
+}
+.pd-stat-num {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+}
+.pd-stat-lbl {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.pd-explainer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+@media (max-width: 880px) { .pd-explainer-grid { grid-template-columns: 1fr; } }
+.pd-explainer {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+.pd-explainer-warn { border-color: rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.05); }
+.pd-explainer-good { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.05); }
+.pd-explainer-icon { font-size: 24px; line-height: 1; padding-top: 2px; }
+.pd-explainer-body h3 {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+.pd-explainer-body p {
+  margin: 0 0 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.pd-explainer-body p:last-child { margin-bottom: 0; }
+.pd-explainer-body strong { color: #ffffff; }
+.pd-explainer-mini { font-size: 12px !important; opacity: 0.7; }
+.pd-explainer-link {
+  display: inline-block;
+  color: #FDE68A;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  margin-top: 2px;
+}
+.pd-explainer-link:hover { text-decoration: underline; }
+
+.pd-launch-card {
+  background: linear-gradient(160deg, #0a0e16 0%, #050b18 100%);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 14px;
+  padding: 24px 26px;
+  display: grid;
+  gap: 18px;
+}
+.pd-launch-title {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+.pd-launch-sub { margin: 0; color: var(--text-dim); font-size: 13px; }
+.pd-launch-form { display: grid; gap: 6px; }
+.pd-form-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.pd-select {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M3 5l4 4 4-4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+}
+.pd-select:focus { outline: none; border-color: rgba(139, 92, 246, 0.55); }
+.pd-list-meta { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+.pd-list-meta.ready { color: #86EFAC; }
+
+.pd-start-btn {
+  background: linear-gradient(135deg, #8B5CF6, #6D3BD7);
+  border: 1px solid rgba(196, 163, 255, 0.5);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 18px 36px;
+  font-size: 16px;
+  font-family: "Sora", -apple-system, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 14px 32px -10px rgba(139, 92, 246, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  justify-self: start;
+}
+.pd-start-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 44px -10px rgba(139, 92, 246, 0.7);
+}
+.pd-start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pd-config-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.pd-config-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 12px;
+  text-decoration: none;
+}
+.pd-config-item:hover { color: #ffffff; }
+.pd-config-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.pd-config-dot.good { background: #22C55E; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+.pd-config-dot.warn { background: #FBBF24; }
+.pd-config-dot.bad  { background: #EF4444; }
+
+/* ---------- ACTIVE MODE — full-width table layout ---------- */
+/* Container: no rounded card. Stretches to fill the view area so the
+   table feels native to the page, matching the Contacts/Companies
+   pages. Old card-wrapped layout removed. */
+.pd-active {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* Top bar: title block + progress/spend + End Session button. Spans the
+   full width like the Contacts page header. */
+.pd-active-topbar {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.pd-active-header {
+  /* Legacy class — keep visually similar in case anything else references */
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(139, 92, 246, 0.04);
+}
+.pd-active-title {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+.pd-active-progress { width: 100%; }
+.pd-progress-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.pd-progress-text > span { color: #ffffff; font-weight: 600; }
+.pd-progress-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pd-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8B5CF6, #3B82F6);
+  transition: width 0.3s ease;
+}
+
+.pd-cost-meter {
+  display: inline-flex !important;
+  align-items: baseline;
+  gap: 5px;
+  margin-left: 14px;
+  padding: 2px 10px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 999px;
+  color: #86EFAC !important;
+  font-weight: 500 !important;
+}
+.pd-cost-meter .pd-cost-label {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  opacity: 0.7;
+  color: #86EFAC !important;
+}
+.pd-cost-meter .pd-cost-value {
+  font-size: 12px;
+  font-weight: 700 !important;
+  color: #BBF7D0 !important;
+}
+.pd-cost-meter.warn { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.35); }
+.pd-cost-meter.warn .pd-cost-label,
+.pd-cost-meter.warn .pd-cost-value { color: #FDE68A !important; }
+
+.pd-active-body {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+}
+@media (max-width: 900px) {
+  .pd-active-body { grid-template-columns: 1fr; }
+  .pd-history { display: none; }
+}
+.pd-stage {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.pd-contact-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+.pd-contact-name {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+.pd-contact-title { color: var(--text-dim); font-size: 14px; margin: 0 0 14px; }
+.pd-contact-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 22px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) { .pd-contact-meta { grid-template-columns: 1fr; } }
+.pd-meta-row { display: flex; flex-direction: column; gap: 2px; }
+.pd-meta-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.pd-meta-value { color: #ffffff; font-size: 15px; word-break: break-word; }
+.pd-meta-value.pd-phone { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 16px; }
+/* Clickable phone / email / website inside the Power Dialer contact card.
+   Subtle dashed underline keeps the card clean but signals tappability;
+   highlight to plasma-purple on hover so users feel the affordance. */
+.pd-meta-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.18);
+  transition: color .12s, border-color .12s;
+}
+.pd-meta-link:hover {
+  color: #C4A3FF;
+  border-bottom-color: #C4A3FF;
+}
+.pd-meta-link-icon {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+  transform: translateY(-1px);
+}
+.pd-meta-link:hover .pd-meta-link-icon { opacity: 1; }
+.pd-phone-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+.pd-phone-badge.mobile   { background: rgba(34, 197, 94, 0.18);  color: #86EFAC; }
+.pd-phone-badge.landline { background: rgba(251, 191, 36, 0.18); color: #FDE68A; }
+.pd-phone-badge.voip     { background: rgba(59, 130, 246, 0.18); color: #93C5FD; }
+.pd-phone-badge.unknown  { background: rgba(255, 255, 255, 0.08); color: var(--text-dim); }
+.pd-phone-carrier {
+  display: inline-block;
+  margin-left: 8px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  vertical-align: 2px;
+}
+.pd-contact-notes {
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 2px solid rgba(139, 92, 246, 0.5);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.pd-action-area { flex-shrink: 0; }
+.pd-state[hidden] { display: none; }
+.pd-state[data-state="idle"] { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pd-call-btn {
+  background: linear-gradient(135deg, #8B5CF6, #6D3BD7);
+  border: 1px solid rgba(196, 163, 255, 0.55);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 22px 56px;
+  font-size: 17px;
+  font-family: "Sora", -apple-system, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 18px 40px -12px rgba(139, 92, 246, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.pd-call-btn:hover { transform: translateY(-2px); box-shadow: 0 26px 55px -12px rgba(139, 92, 246, 0.75); }
+.pd-call-icon { font-size: 24px; }
+.pd-call-label { letter-spacing: 0.1em; text-transform: uppercase; }
+.pd-call-kbd {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+.pd-skip-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.pd-skip-btn:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.18); }
+.pd-kbd-hint {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pd-state[data-state="calling"] { display: flex; justify-content: center; padding: 28px 0; }
+.pd-ringing {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 28px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 14px;
+}
+.pd-ringing-pulse {
+  width: 14px; height: 14px;
+  border-radius: 999px;
+  background: #8B5CF6;
+  animation: pd-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pd-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+  70%  { box-shadow: 0 0 0 18px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+.pd-ringing-text { display: flex; flex-direction: column; gap: 2px; color: #ffffff; font-size: 14px; }
+.pd-ringing-text strong { font-size: 15px; }
+.pd-ringing-text span { color: var(--text-dim); }
+
+.pd-state[data-state="outcome"] { display: flex; flex-direction: column; gap: 14px; }
+.pd-outcome-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.pd-outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 700px) { .pd-outcome-grid { grid-template-columns: repeat(2, 1fr); } }
+.pd-outcome-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.15s ease;
+}
+.pd-outcome-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.45);
+  transform: translateY(-1px);
+}
+.pd-outcome-btn[data-outcome="booked"] {
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+.pd-outcome-btn[data-outcome="booked"]:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.7);
+}
+.pd-outcome-emoji { font-size: 18px; flex-shrink: 0; }
+.pd-kbd {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+.pd-notes-field {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 56px;
+}
+.pd-notes-field:focus { outline: none; border-color: rgba(139, 92, 246, 0.55); }
+
+.pd-state-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 20px;
+  text-align: center;
+}
+.pd-done-icon { font-size: 48px; }
+.pd-state-done h3 {
+  margin: 0;
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 22px;
+  color: #ffffff;
+}
+.pd-done-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+}
+.pd-done-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+}
+.pd-done-stat .num {
+  font-family: "Sora", -apple-system, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.pd-done-stat .lbl {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.pd-shortcuts-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  text-align: center;
+}
+.pd-shortcuts-hint kbd {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #ffffff;
+  margin: 0 1px;
+}
+
+.pd-history {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+.pd-history-header {
+  padding: 16px 18px 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.pd-history-list { flex: 1; overflow-y: auto; padding: 8px 12px 16px; }
+.pd-history-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 32px 12px;
+}
+.pd-history-item { display: flex; gap: 10px; padding: 10px 8px; border-radius: 8px; font-size: 12px; }
+.pd-history-item:hover { background: rgba(255, 255, 255, 0.03); }
+.pd-history-dot {
+  flex-shrink: 0;
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  margin-top: 6px;
+  background: var(--text-dim);
+}
+.pd-history-dot.booked         { background: #22C55E; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+.pd-history-dot.callback_later { background: #FBBF24; }
+.pd-history-dot.gatekeeper     { background: #C4A3FF; }
+.pd-history-dot.voicemail      { background: #93C5FD; }
+.pd-history-dot.no_answer      { background: #94A3B8; }
+.pd-history-dot.not_interested { background: #FCA5A5; }
+.pd-history-dot.wrong_person   { background: #E0E2EE; }
+.pd-history-dot.bad_number     { background: #EF4444; }
+.pd-history-dot.skipped        { background: rgba(255, 255, 255, 0.2); }
+.pd-history-item-name {
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-history-item-outcome { color: var(--text-dim); font-size: 11px; margin-top: 1px; }
+
+/* ===========================================================================
+   POWER DIALER — table-row layout (new)
+   Each contact is a <tr> in a full-width .pd-queue-table. The currently-
+   dialing row is highlighted purple. Directly beneath it sits an inline
+   .pd-action-row (also a <tr>) carrying the call button, outcome buttons,
+   notes textarea, and Skip / Stop controls. As outcomes are recorded the
+   highlight slides one row down.
+=========================================================================== */
+.pd-table-wrap {
+  width: 100%;
+  overflow-x: auto;                /* horizontal scroll on narrow viewports */
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+.pd-queue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pd-queue-table thead th {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev-2);
+}
+.pd-queue-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  font-size: 13px;
+}
+.pd-queue-table tr:last-child td { border-bottom: none; }
+.pd-col-status { width: 50px; text-align: center; }
+.pd-col-name   { min-width: 220px; }
+.pd-col-phone  { width: 170px; }
+.pd-col-line   { width: 170px; }
+.pd-col-website { width: 220px; }
+.pd-col-notes  { min-width: 280px; }
+
+/* Row states */
+.pd-row {
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+.pd-row.upcoming { opacity: 0.7; }
+.pd-row.upcoming:hover { opacity: 0.95; background: rgba(255, 255, 255, 0.02); }
+.pd-row.completed { opacity: 0.55; }
+.pd-row.completed .pd-row-name { color: var(--text-dim); }
+.pd-row.current {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.18), rgba(139, 92, 246, 0.04));
+  position: relative;
+}
+.pd-row.current td {
+  border-bottom-color: rgba(139, 92, 246, 0.35);
+}
+.pd-row.current td:first-child {
+  box-shadow: inset 3px 0 0 0 #8B5CF6;     /* purple left edge marker */
+}
+
+/* Status column — number, current-▶, completed outcome icon */
+.pd-row-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+}
+.pd-row.current .pd-row-status {
+  background: #8B5CF6;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.7);
+  animation: pd-current-pulse 1.6s ease-in-out infinite;
+}
+.pd-row-status.booked         { background: #22C55E; color: #fff; }
+.pd-row-status.callback_later { background: #FBBF24; color: #0a0e16; }
+.pd-row-status.gatekeeper     { background: #C4A3FF; color: #0a0e16; }
+.pd-row-status.voicemail      { background: #93C5FD; color: #0a0e16; }
+.pd-row-status.no_answer      { background: #94A3B8; color: #0a0e16; }
+.pd-row-status.not_interested { background: #FCA5A5; color: #0a0e16; }
+.pd-row-status.wrong_person   { background: #E0E2EE; color: #0a0e16; }
+.pd-row-status.bad_number     { background: #EF4444; color: #fff; }
+.pd-row-status.skipped        { background: rgba(255, 255, 255, 0.15); color: var(--text-dim); }
+
+/* Name + sub-line (company / industry) */
+.pd-row-name {
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+.pd-row-sub {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Phone, website cells — links + minor stacking */
+.pd-row-phone {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.pd-row-phone a {
+  color: #ffffff;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.pd-row-phone a:hover { color: #C4A3FF; border-color: #C4A3FF; }
+.pd-row-website {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  display: block;
+}
+.pd-row-website a {
+  color: #93C5FD;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(147, 197, 253, 0.4);
+}
+.pd-row-website a:hover { color: #ffffff; border-color: #ffffff; }
+.pd-row-website-icon {
+  display: inline-block;
+  margin-left: 3px;
+  opacity: 0.6;
+  font-size: 10px;
+}
+/* Line type stack: badge + carrier subtitle */
+.pd-row-line { display: flex; flex-direction: column; gap: 3px; }
+.pd-row-carrier {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+/* Notes preview — clamp to 2 lines, bold Power Dial marker inherits */
+.pd-row-notes {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 360px;
+}
+.pd-row.current .pd-row-notes { -webkit-line-clamp: 4; color: var(--text); }
+
+/* ---------- Inline action row (under the current contact) ---------- */
+.pd-action-row td {
+  padding: 0;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.02));
+  border-bottom: 1px solid rgba(139, 92, 246, 0.25);
+}
+/* Vertical-stack layout: transport-controls row on top, outcome grid + notes
+   below. Replaces the prior 3-column grid so the 8 outcome buttons can
+   span the full panel width as a single row. */
+.pd-action-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+}
+/* Transport-control row: PREV · CALL · SKIP · STOP — like media-player
+   buttons. The CALL button is the primary; PREV/SKIP/STOP are secondary
+   with universal icons. */
+.pd-action-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pd-action-controls > .pd-action-call-btn { flex: 1 1 auto; min-width: 180px; }
+.pd-action-controls > .pd-action-ringing  { flex: 1 1 auto; min-width: 240px; }
+
+/* Big call button (idle state) */
+.pd-action-call-btn {
+  background: linear-gradient(135deg, #8B5CF6, #6D3BD7);
+  border: 1px solid rgba(196, 163, 255, 0.55);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-family: "Sora", -apple-system, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 14px 30px -12px rgba(139, 92, 246, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.pd-action-call-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px -12px rgba(139, 92, 246, 0.7);
+}
+.pd-action-call-btn .pd-kbd-pill {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+/* Ringing indicator (calling state) */
+.pd-action-ringing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 10px;
+}
+.pd-action-ringing-dot {
+  width: 12px; height: 12px;
+  border-radius: 999px;
+  background: #8B5CF6;
+  animation: pd-pulse 1.2s ease-in-out infinite;
+}
+.pd-action-ringing strong { color: #ffffff; font-size: 13px; }
+.pd-action-ringing span { color: var(--text-dim); font-size: 12px; }
+
+/* Outcome buttons grid — all 8 in a single row on wide screens. Shrinks
+   to 4-wide on tablets, 2-wide on phones. Smaller padding + font so they
+   stay scannable without dominating the panel. */
+.pd-action-outcomes {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (max-width: 1100px) {
+  .pd-action-outcomes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .pd-action-outcomes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.pd-action-outcome-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 6px 8px 8px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.15;
+  position: relative;
+  transition: all 0.15s ease;
+  min-width: 0;
+}
+.pd-action-outcome-btn > span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.pd-action-outcome-btn:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.55);
+  transform: translateY(-1px);
+}
+.pd-action-outcome-btn[data-outcome="booked"] {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+.pd-action-outcome-btn[data-outcome="booked"]:hover {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.8);
+}
+.pd-action-outcome-btn .emoji { font-size: 16px; flex-shrink: 0; }
+.pd-action-outcome-btn .kbd {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+
+/* Notes textarea (middle column) */
+.pd-action-notes {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 48px;
+}
+.pd-action-notes:focus { outline: none; border-color: rgba(139, 92, 246, 0.55); }
+
+/* Transport-control buttons (PREV / SKIP / STOP) — universal media icons
+   alongside the CALL button. Compact, square-ish, secondary visual weight
+   so CALL stays the primary action. */
+.pd-action-transport {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  padding: 0 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  min-height: 56px;
+}
+.pd-action-transport .pd-transport-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.pd-action-transport:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.07);
+}
+.pd-action-transport.pd-action-prev:hover { color: #C4A3FF; border-color: rgba(196, 163, 255, 0.4); }
+.pd-action-transport.pd-action-stop:hover { color: #FCA5A5; border-color: rgba(239, 68, 68, 0.55); background: rgba(239, 68, 68, 0.06); }
+.pd-action-transport:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Auto-scroll the action row into view smoothly when advancing */
+.pd-row.current { scroll-margin-top: 80px; }
+
+/* ---------- Line-type filter chips ---------- */
+.pd-type-filter {
+  display: grid;
+  gap: 8px;
+}
+.pd-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pd-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+.pd-type-chip .pd-type-count {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+}
+/* Active state — keeps the type's own brand color */
+.pd-type-chip.active.mobile   { background: rgba(34, 197, 94, 0.22);  color: #86EFAC; border-color: rgba(34, 197, 94, 0.5); }
+.pd-type-chip.active.landline { background: rgba(251, 191, 36, 0.22); color: #FDE68A; border-color: rgba(251, 191, 36, 0.5); }
+.pd-type-chip.active.voip     { background: rgba(59, 130, 246, 0.22); color: #93C5FD; border-color: rgba(59, 130, 246, 0.5); }
+.pd-type-chip.active.unknown  { background: rgba(255, 255, 255, 0.1); color: var(--text); border-color: rgba(255, 255, 255, 0.2); }
+.pd-type-chip.active:hover { transform: translateY(-1px); }
+/* Inactive state — desaturated, low opacity */
+.pd-type-chip.inactive {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-dim);
+  border-color: rgba(255, 255, 255, 0.06);
+  opacity: 0.45;
+}
+.pd-type-chip.inactive:hover { opacity: 0.75; }
+.pd-type-chip.inactive .pd-type-count { background: rgba(255, 255, 255, 0.05); }
+.pd-type-quickactions { display: flex; gap: 8px; margin-top: 2px; }
+
+/* ---------- Contact preview (setup-mode list with checkboxes) ---------- */
+.pd-preview {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow: hidden;
+}
+.pd-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+.pd-preview-title {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.pd-preview-title > span:first-child { color: #ffffff; font-weight: 700; font-size: 14px; margin-right: 4px; }
+.pd-preview-of { opacity: 0.6; }
+.pd-preview-actions { display: flex; gap: 8px; }
+.pd-preview-toggle {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pd-preview-toggle:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.18); }
+.pd-preview-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}
+.pd-preview-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.pd-preview-row:hover { background: rgba(255, 255, 255, 0.03); }
+.pd-preview-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #8B5CF6;
+  cursor: pointer;
+}
+.pd-preview-name {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+}
+.pd-preview-row.unchecked .pd-preview-name { color: var(--text-dim); text-decoration: line-through; opacity: 0.5; }
+.pd-preview-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.pd-preview-phone-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.pd-preview-phone-badge.mobile   { background: rgba(34, 197, 94, 0.18);  color: #86EFAC; }
+.pd-preview-phone-badge.landline { background: rgba(251, 191, 36, 0.18); color: #FDE68A; }
+.pd-preview-phone-badge.voip     { background: rgba(59, 130, 246, 0.18); color: #93C5FD; }
+.pd-preview-phone-badge.unknown  { background: rgba(255, 255, 255, 0.08); color: var(--text-dim); }
+.pd-preview-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---------- Active-mode queue panel (replaces old Recent Outcomes) ---------- */
+.pd-queue {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.pd-queue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.pd-queue-progress {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.pd-queue-progress > span { color: #ffffff; font-weight: 700; }
+.pd-queue-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px 12px;
+}
+.pd-queue-row {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  position: relative;
+  margin-bottom: 2px;
+}
+.pd-queue-row.upcoming { opacity: 0.55; }
+.pd-queue-row.completed { opacity: 0.7; }
+.pd-queue-row.current {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.18), rgba(139, 92, 246, 0.04));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  opacity: 1;
+  padding: 9px 10px;     /* compensate for border */
+  margin: 2px 0;
+  box-shadow: 0 0 18px rgba(139, 92, 246, 0.18);
+}
+.pd-queue-row.current::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: linear-gradient(180deg, #8B5CF6, #6D3BD7);
+  border-radius: 999px;
+}
+.pd-queue-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+}
+.pd-queue-row.current .pd-queue-icon {
+  background: #8B5CF6;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+  animation: pd-current-pulse 1.6s ease-in-out infinite;
+}
+@keyframes pd-current-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.pd-queue-icon.booked         { background: #22C55E; color: #ffffff; }
+.pd-queue-icon.callback_later { background: #FBBF24; color: #0a0e16; }
+.pd-queue-icon.gatekeeper     { background: #C4A3FF; color: #0a0e16; }
+.pd-queue-icon.voicemail      { background: #93C5FD; color: #0a0e16; }
+.pd-queue-icon.no_answer      { background: #94A3B8; color: #0a0e16; }
+.pd-queue-icon.not_interested { background: #FCA5A5; color: #0a0e16; }
+.pd-queue-icon.wrong_person   { background: #E0E2EE; color: #0a0e16; }
+.pd-queue-icon.bad_number     { background: #EF4444; color: #ffffff; }
+.pd-queue-icon.skipped        { background: rgba(255, 255, 255, 0.2); color: var(--text-dim); }
+.pd-queue-name {
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-queue-sub {
+  color: var(--text-dim);
+  font-size: 10px;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-queue-row.upcoming .pd-queue-name { color: rgba(255, 255, 255, 0.7); font-weight: 500; }
+
+/* ===========================================================
+   POWER DIALER v3 — overlay on the Contacts table
+   The dedicated section is gone. Instead:
+   1. A pulsing purple button in the Contacts toolbar opens a modal
+   2. The modal explains Twilio + zero markup + has Activate
+   3. Activate kicks off a session that decorates the Contacts table
+      with a purple "current contact" highlight and inserts a temporary
+      action row directly beneath the current contact
+   =========================================================== */
+
+/* --- Neon-glow activator button --------------------------
+   Same SIZE/shape/padding as a regular .btn (inherits from the base
+   class), no filled gradient background. Just a purple halo behind
+   the button that breathes brighter and dimmer — neon-light style.
+   When a session is live the halo turns green. */
+.btn-power-dialer {
+  position: relative;
+  /* No background/border overrides — inherits .btn's dark fill, so
+     it sits identically next to Import CSV / Export CSV / etc. */
+  border-color: rgba(139, 92, 246, 0.55);
+  color: #fff !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  animation: pdNeonGlow 2s ease-in-out infinite;
+}
+.btn-power-dialer:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.85);
+}
+.btn-power-dialer .pd-bolt {
+  font-size: 13px;
+  margin-right: 4px;
+  display: inline-block;
+  filter: drop-shadow(0 0 4px rgba(253, 224, 71, 0.8));
+}
+/* While a session is live the activator doubles as End Session.
+   Red glow signals the destructive action — clicking ends the call. */
+.btn-power-dialer[data-pd-active="1"] {
+  border-color: rgba(239, 68, 68, 0.55);
+  animation: pdNeonGlowRed 1.4s ease-in-out infinite;
+}
+.btn-power-dialer[data-pd-active="1"]:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.85);
+}
+/* The breathing halo. Two stacked shadows give the neon depth — a
+   tight inner glow + a wider outer bloom. */
+@keyframes pdNeonGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 6px  rgba(139, 92, 246, 0.35),
+      0 0 14px rgba(139, 92, 246, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(139, 92, 246, 0.85),
+      0 0 28px rgba(139, 92, 246, 0.45);
+  }
+}
+@keyframes pdNeonGlowGreen {
+  0%, 100% {
+    box-shadow:
+      0 0 6px  rgba(34, 197, 94, 0.4),
+      0 0 14px rgba(34, 197, 94, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(34, 197, 94, 0.9),
+      0 0 28px rgba(34, 197, 94, 0.5);
+  }
+}
+@keyframes pdNeonGlowRed {
+  0%, 100% {
+    box-shadow:
+      0 0 6px  rgba(239, 68, 68, 0.4),
+      0 0 14px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(239, 68, 68, 0.9),
+      0 0 28px rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* --- Activation modal ------------------------------------- */
+.pd-modal-card {
+  max-width: 760px;
+  width: 100%;
+}
+.pd-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  margin: 0;
+}
+.pd-modal-bolt {
+  font-size: 22px;
+  filter: drop-shadow(0 0 6px rgba(253, 224, 71, 0.65));
+}
+.pd-modal-lead {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+.pd-modal-lead em { color: #fff; font-style: normal; font-weight: 500; }
+.pd-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+@media (max-width: 640px) {
+  .pd-modal-grid { grid-template-columns: 1fr; }
+}
+.pd-modal-card-inner {
+  display: flex;
+  gap: 12px;
+  padding: 14px 14px 14px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+}
+.pd-modal-warn {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.06);
+}
+.pd-modal-good {
+  border-color: rgba(34, 197, 94, 0.32);
+  background: rgba(34, 197, 94, 0.06);
+}
+.pd-modal-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pd-modal-card-inner h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #fff;
+}
+.pd-modal-card-inner p {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.pd-modal-card-inner p:last-child { margin-bottom: 0; }
+.pd-modal-mini { font-size: 11px !important; opacity: 0.85; }
+.pd-modal-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 12.5px;
+  text-decoration: none;
+}
+.pd-modal-link:hover { text-decoration: underline; }
+
+.pd-modal-queue-info {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.pd-modal-queue-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #fff;
+}
+.pd-modal-queue-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 4px;
+}
+.pd-modal-queue-info strong {
+  color: #c4b5fd;
+  font-size: 16px;
+  font-weight: 700;
+  margin-right: 2px;
+}
+.pd-modal-queue-sub {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+.pd-modal-config {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+/* Inline Power Dial Phone card — mirrors Settings → API Keys.
+   Sits inside the activation modal so the user can configure their
+   cold-call number without leaving the flow. Status dots above
+   update live the moment a number is saved. */
+.pd-modal-cfg-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pd-modal-cfg-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.pd-modal-cfg-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pd-modal-cfg-desc {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.pd-modal-cfg-desc strong { color: #fff; font-weight: 600; }
+.pd-modal-cfg-desc a { color: #c4b5fd; }
+.pd-modal-cfg-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.pd-modal-cfg-edit {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.pd-modal-cfg-edit[hidden] { display: none; }
+.pd-modal-cfg-edit input[type="tel"] {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+}
+.pd-modal-cfg-edit input[type="tel"]:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.55);
+  background: rgba(0, 0, 0, 0.4);
+}
+.pd-modal-cfg-edit-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+@media (max-width: 540px) {
+  .pd-modal-cfg-head { flex-direction: column; }
+  .pd-modal-cfg-edit { flex-direction: column; }
+  .pd-modal-cfg-edit-actions { justify-content: flex-end; }
+}
+.pd-modal-config-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  text-decoration: none;
+}
+.pd-modal-config-item:hover { color: #fff; }
+
+.pd-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 4px;
+}
+/* Modal Start button — inherits the neon-glow look from .btn-power-dialer.
+   Slightly larger padding for a comfortable primary-CTA tap target. */
+.pd-modal-activate {
+  min-width: 140px;
+  font-size: 14px;
+  padding: 10px 22px;
+}
+.pd-modal-activate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  animation: none;
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow: none;
+}
+
+/* --- Active-session banner (sits between header and contacts table) --- */
+/* Banner default state: lives in flow at the top of #view-contacts,
+   aligned with the list-picker row beneath it. Doesn't overlap the
+   topbar above. */
+.pd-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  margin: 0 0 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.85) 0%, rgba(67, 28, 152, 0.85) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  transition: box-shadow 0.18s ease;
+}
+/* PINNED state: kicks in via JS scroll listener once the user scrolls
+   past the banner's natural position. Now it follows the viewport top. */
+.pd-banner.pd-banner-pinned {
+  position: fixed;
+  top: 14px;
+  left: calc(240px + 28px);   /* sidebar (240) + .view horizontal padding */
+  right: 28px;
+  margin: 0;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+/* Placeholder element that reserves the banner's space in the layout
+   while it's pinned — prevents the contacts table from jumping up
+   under the banner when fixed-positioning removes it from flow. */
+.pd-banner-spacer { display: none; margin: 0 0 20px; }
+.pd-banner-spacer.pd-banner-spacer-on { display: block; }
+
+@media (max-width: 900px) {
+  .pd-banner.pd-banner-pinned { left: 14px; right: 14px; }
+}
+.pd-banner[hidden] { display: none; }
+.pd-banner-title-block { min-width: 0; flex: 1; }
+.pd-banner-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #c4b5fd;
+  text-transform: uppercase;
+}
+.pd-banner-title {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: #fff;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pd-banner-progress {
+  flex: 2;
+  min-width: 200px;
+}
+.pd-banner .pd-progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 5px;
+  white-space: nowrap;
+}
+.pd-banner .pd-progress-pos {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.pd-banner .pd-progress-pos #pd-position { font-weight: 700; }
+.pd-banner .pd-progress-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pd-banner .pd-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #22c55e);
+  transition: width 0.25s ease;
+}
+.pd-banner .pd-cost-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 11px;
+}
+.pd-banner .pd-cost-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.pd-banner .pd-cost-value {
+  color: #4ade80;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 720px) {
+  .pd-banner { flex-wrap: wrap; }
+  .pd-banner-progress { flex-basis: 100%; min-width: 0; }
+}
+
+/* --- Contacts table dial overlay -------------------------- */
+/* Highlight the current contact's row — smooth purple wash that runs
+   uniformly edge-to-edge so the row reads as one continuous Power Dialer
+   rectangle (checkbox cell through Log button cell). */
+#view-contacts tr.pd-current-row {
+  background: linear-gradient(90deg,
+    rgba(139, 92, 246, 0.20) 0%,
+    rgba(139, 92, 246, 0.18) 50%,
+    rgba(139, 92, 246, 0.20) 100%) !important;
+  box-shadow: inset 4px 0 0 0 #8b5cf6;
+  position: relative;
+}
+/* Every td in the active row gets the same translucent purple background
+   so the cells visually merge into one rectangle — no checkered look
+   where the .col-select or .log-call cell punches through. */
+#view-contacts tr.pd-current-row > td {
+  background: transparent !important;
+}
+/* Log Call button on the active row: skin it to match the Power Dialer
+   theme so it looks like part of the highlighted rectangle, not a
+   separate utility button. (Notes still flow into the inline power-
+   dialer textarea — the Log button is here for parity.) */
+#view-contacts tr.pd-current-row .log-call-btn {
+  background: rgba(139, 92, 246, 0.18) !important;
+  border: 1px solid rgba(139, 92, 246, 0.45) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.08);
+  transition: background 0.15s, border-color 0.15s;
+}
+#view-contacts tr.pd-current-row .log-call-btn:hover {
+  background: rgba(139, 92, 246, 0.32) !important;
+  border-color: rgba(139, 92, 246, 0.75) !important;
+}
+/* The row-select checkbox cell: subtle purple-tinted checkbox so it
+   blends into the rectangle rather than reading as a stark dark square. */
+#view-contacts tr.pd-current-row .row-select {
+  accent-color: #a78bfa;
+}
+#view-contacts tr.pd-current-row td:first-child {
+  position: relative;
+}
+#view-contacts tr.pd-current-row td:first-child::before {
+  content: "▶";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #c4b5fd;
+  font-size: 10px;
+  animation: pdBlink 1.4s ease-in-out infinite;
+}
+@keyframes pdBlink {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+#view-contacts tr.pd-completed-row {
+  opacity: 0.55;
+}
+#view-contacts tr.pd-completed-row td:first-child::after {
+  content: "✓";
+  margin-left: 4px;
+  color: #4ade80;
+  font-weight: 700;
+}
+
+/* Inline action row inserted directly beneath the current contact */
+tr.pd-inline-action-row > td {
+  padding: 0 !important;
+  background: rgba(139, 92, 246, 0.06) !important;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.35) !important;
+}
+.pd-inline-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 16px;
+  border-left: 4px solid #8b5cf6;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0.02) 100%);
+}
+
+/* All controls on ONE row: [Call] [PREV] [STOP] [NEXT] | [8 outcomes]
+   Wraps to multiple rows on narrow viewports. */
+.pd-inline-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pd-inline-transport {
+  min-width: 50px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s, transform 0.1s;
+  flex: 0 0 auto;
+}
+.pd-inline-transport:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+.pd-inline-transport:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+.pd-inline-transport.pd-inline-prev:hover { background: rgba(139, 92, 246, 0.25); border-color: rgba(139, 92, 246, 0.55); }
+.pd-inline-transport.pd-inline-skip:hover { background: rgba(34, 197, 94, 0.20);  border-color: rgba(34, 197, 94, 0.55); }
+/* STOP is permanently red — no hover required to spot it */
+.pd-inline-transport.pd-inline-stop {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.55);
+  color: #fca5a5;
+}
+.pd-inline-transport.pd-inline-stop:hover {
+  background: rgba(239, 68, 68, 0.32);
+  border-color: rgba(239, 68, 68, 0.85);
+  color: #fff;
+}
+
+/* Vertical divider between transports and outcome buttons */
+.pd-inline-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 4px 4px;
+  flex: 0 0 1px;
+}
+
+.pd-inline-call {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: auto;
+  padding: 0 14px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.28);
+}
+.pd-inline-call:hover {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+.pd-inline-call .pd-call-kbd {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  margin-left: 5px;
+  letter-spacing: 0.06em;
+}
+.pd-inline-call.pd-inline-ringing {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55);
+  animation: pdRing 1s ease-in-out infinite;
+  cursor: default;
+}
+@keyframes pdRing {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+  60%  { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+/* Outcome buttons row — 8-wide single row, collapses below */
+/* Outcome buttons live in the same flex row as the transports.
+   Sized to fit all 12 controls on a single row at desktop widths.
+   Each button auto-grows to its content (icon + ≤7-char label) so the
+   text never gets ellipsized. Wraps to a second row below 1100px. */
+.pd-inline-outcome-btn {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.15;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+  /* Auto-grow: each button is as wide as needed for its label.
+     min-width fits "Not Interested" (the longest at 14 chars) so the
+     text never gets ellipsized. */
+  flex: 0 0 auto;
+  min-width: 115px;
+  white-space: nowrap;
+}
+.pd-inline-outcome-btn:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+}
+.pd-inline-outcome-btn .pd-oc-emoji {
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pd-inline-outcome-btn .pd-oc-label {
+  font-size: 11px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  /* No ellipsis — labels are short enough to always fit at min-width 78. */
+}
+/* When the row can't fit everything, the outcomes wrap. Once wrapped,
+   make them grow to fill the new row evenly so it doesn't look uneven. */
+@media (max-width: 1300px) {
+  .pd-inline-outcome-btn { flex: 1 1 90px; }
+  .pd-inline-divider { display: none; }
+}
+@media (max-width: 600px) {
+  .pd-inline-outcome-btn { flex: 1 1 calc(25% - 5px); min-width: 0; }
+}
+
+/* Notes textarea */
+.pd-inline-notes {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+.pd-inline-notes::placeholder { color: var(--text-dim); }
+.pd-inline-notes:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.55);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.pd-inline-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.pd-inline-hint kbd {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: inherit;
+  color: #fff;
+}
+
+/* Make the legacy section absolutely not render even if styles cascade weird */
+#view-powerdialer-LEGACY { display: none !important; }
+
+/* ===========================================================
+   Generic type-ahead autocomplete dropdown — Google-Places-backed
+   suggestions for the Lead Gen "Postal code or city" field.
+   =========================================================== */
+.autocomplete-wrap {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+.autocomplete-wrap > input { width: 100%; box-sizing: border-box; }
+.autocomplete-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 60;
+}
+.autocomplete-panel[hidden] { display: none; }
+.autocomplete-item {
+  padding: 9px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13.5px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.autocomplete-item:hover,
+.autocomplete-item[aria-selected="true"] {
+  background: rgba(139, 92, 246, 0.18);
+}
+.autocomplete-item .ac-pin {
+  font-size: 12px;
+  opacity: 0.65;
+  flex-shrink: 0;
+}
+.autocomplete-empty {
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+/* Inline validation error for the Lead Gen form */
+.lg-error {
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  color: #fecaca;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.lg-error strong { color: #fff; font-weight: 600; }
+
+
+/* ============================================================
+   VELOSIFY CHESS — board, pieces, controls.
+   ============================================================ */
+.chess-card {
+  display: grid;
+  grid-template-columns: minmax(auto, 1fr) 220px;
+  grid-template-areas:
+    "controls controls"
+    "board    side";
+  gap: 18px;
+  padding: 20px;
+}
+@media (max-width: 820px) {
+  .chess-card {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "controls"
+      "board"
+      "side";
+  }
+}
+.chess-controls { grid-area: controls; display: flex; flex-direction: column; gap: 10px; }
+.chess-status {
+  font-family: "Sora", sans-serif;
+  font-size: 15px;
+  color: #fff;
+  letter-spacing: -0.005em;
+  min-height: 22px;
+}
+.chess-status.win    { color: #86efac; }
+.chess-status.lose   { color: #fca5a5; }
+.chess-status.draw   { color: #c4b5fd; }
+.chess-status.check  { color: #fde68a; }
+.chess-control-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chess-difficulty { display: flex; align-items: center; gap: 8px; }
+.chess-difficulty-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.chess-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.chess-btn { min-height: 32px; padding: 0 14px; font-size: 13px; }
+
+.chess-board-wrap {
+  grid-area: board;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows:    repeat(8, 1fr);
+  width: min(560px, 100%);
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45),
+              0 0 60px rgba(139, 92, 246, 0.06);
+  user-select: none;
+}
+.chess-sq {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.chess-sq.light { background: rgba(139, 92, 246, 0.14); color: #fff; }
+.chess-sq.dark  { background: rgba(2, 4, 10, 0.85);    color: #fff; }
+.chess-sq.selected { background: rgba(139, 92, 246, 0.55) !important; }
+.chess-sq.last-from { background: rgba(91, 114, 255, 0.32) !important; }
+.chess-sq.last-to   { background: rgba(91, 114, 255, 0.45) !important; }
+.chess-sq.check     { background: rgba(239, 68, 68, 0.45) !important; }
+/* Hint highlights — distinct from selected/last-move so the user can
+   tell at a glance "this is the engine's suggestion". Warm amber on
+   the from square (the piece to move), brighter amber on the to
+   square (where it should go), with a pulsing border to draw the eye. */
+.chess-sq.hint-from { background: rgba(245, 158, 11, 0.40) !important; box-shadow: inset 0 0 0 3px rgba(251, 191, 36, 0.85); }
+.chess-sq.hint-to   { background: rgba(245, 158, 11, 0.55) !important; box-shadow: inset 0 0 0 3px rgba(251, 191, 36, 0.95); animation: chess-hint-pulse 1.3s ease-in-out infinite; }
+@keyframes chess-hint-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(251, 191, 36, 0.95); }
+  50%      { box-shadow: inset 0 0 0 3px rgba(251, 191, 36, 0.45); }
+}
+.chess-sq.legal::after {
+  content: "";
+  position: absolute;
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: rgba(196, 181, 253, 0.55);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.45);
+  pointer-events: none;
+}
+.chess-sq.legal.capture::after {
+  width: 80%;
+  height: 80%;
+  background: transparent;
+  border: 3px solid rgba(196, 181, 253, 0.65);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
+}
+/* Pieces are now <img> tags loading the Cburnett SVG set from a CDN
+   (see PIECE_CDN in app.js). Each one fills ~88% of its square and gets
+   a soft drop shadow so it lifts off the felt — gives a tangible
+   "object on a board" feel without going full 3D. */
+.chess-piece {
+  pointer-events: none;
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55));
+  /* The piece images are already finished art — no recolor needed.
+     Slight glow on black pieces helps them pop against the dark felt. */
+}
+.chess-piece.black {
+  filter:
+    drop-shadow(0 3px 4px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 0 6px rgba(139, 92, 246, 0.35));
+}
+/* Move animations — applied by render() right after a move commits.
+   --dx / --dy carry the pixel offset from the destination square back
+   to the source square. The keyframes interpolate from that offset to
+   (0, 0), so the piece visibly slides from where it was to where it is.
+   chess-piece-slide is used for everything except knights, which use
+   chess-piece-hop for a slight vertical arc that reads as a jump. */
+.chess-piece-slide {
+  animation: chess-slide 0.95s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  z-index: 3;        /* float above neighbouring pieces during the slide */
+}
+@keyframes chess-slide {
+  from { transform: translate(var(--dx, 0), var(--dy, 0)); }
+  to   { transform: translate(0, 0); }
+}
+.chess-piece-hop {
+  animation: chess-hop 1.10s cubic-bezier(0.4, 0, 0.6, 1) both;
+  z-index: 3;
+}
+@keyframes chess-hop {
+  0%   { transform: translate(var(--dx, 0), var(--dy, 0)) scale(1); }
+  50%  { transform: translate(calc(var(--dx, 0) * 0.5),
+                              calc(var(--dy, 0) * 0.5 - 24px))
+                    scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.chess-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.chess-captured {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chess-captured-row {
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -2px;
+  min-height: 28px;
+  word-break: break-all;
+}
+#chess-captured-by-you { color: rgba(196, 181, 253, 0.85); }
+#chess-captured-by-cpu { color: rgba(252, 165, 165, 0.75); }
+.chess-history {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12.5px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.chess-history-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.chess-history-list {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text);
+}
+.chess-history-list li::marker { color: var(--text-dim); }
+
+/* ============================================================
+   VELOSIFY BLACKJACK — 10-hand session vs the dealer.
+   Velosify purple felt, glassy white cards, chip-style bet
+   controls. Vegas Strip rules in the JS module.
+   ============================================================ */
+.bj-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+/* Header lays out three stats edge-to-edge — Bankroll left, Hand
+   centered, Best Session right. justify-content distributes the row;
+   per-stat alignment keeps the inner label/value lined up under the
+   correct edge so the eye reads "left / center / right" cleanly. */
+.bj-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.bj-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+.bj-stat:nth-child(1) { text-align: left; align-items: flex-start; }
+.bj-stat:nth-child(2) { text-align: center; align-items: center; flex: 1; }
+.bj-stat:nth-child(3) { text-align: right; align-items: flex-end; }
+.bj-stat-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.bj-stat-value {
+  font-family: "Sora", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+/* Fixed height — the bottom edge stays put regardless of how many
+   cards have been dealt or whether the player has split into 2-4
+   hands. Dealer is pinned to the top, player to the bottom (via
+   justify-content: space-between), and the message sits in the
+   middle. The CTA message is absolutely centered (see below) so it
+   doesn't push siblings around either. */
+.bj-table {
+  background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.14), rgba(2, 4, 10, 0.45));
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 14px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 360px;
+  position: relative;   /* anchor for the absolutely-centered Deal Cards CTA */
+}
+.bj-side { display: flex; flex-direction: column; gap: 8px; }
+/* Fixed section heights anchor the "DEALER" and "YOU" labels — they
+   sit at the top of their section, and their section's top edge stays
+   put regardless of how many cards (or split hands) appear below.
+   Without these, the player section would grow upward each hit, and
+   the "YOU" label would drift up the table. */
+.bj-side.bj-dealer  { height: 120px; }
+/* margin-top: auto pins the player section to the bottom of the table
+   regardless of whether the message is in-flow or absolutely positioned.
+   Without this, switching the message from in-flow text to the absolute
+   "Deal Cards" CTA changed the count of flex children, which redistributed
+   the free space and made "YOU" jump up ~20px. */
+.bj-side.bj-player  { height: 150px; margin-top: auto; }
+.bj-side-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bj-side-total { color: #c4b5fd; font-weight: 600; }
+.bj-message {
+  text-align: center;
+  font-family: "Sora", sans-serif;
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: -0.005em;
+  min-height: 22px;
+  padding: 4px 0;
+}
+.bj-cards, .bj-hand-cards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 96px;
+}
+.bj-hands {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.bj-hand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+.bj-hand.active { border-color: rgba(139, 92, 246, 0.55); background: rgba(139, 92, 246, 0.08); }
+.bj-hand.bust   { opacity: 0.6; }
+.bj-hand.surrendered { opacity: 0.55; }
+.bj-hand.win    { border-color: rgba(34, 197, 94, 0.55); background: rgba(34, 197, 94, 0.08); }
+.bj-hand.lose   { border-color: rgba(239, 68, 68, 0.55); background: rgba(239, 68, 68, 0.06); }
+.bj-hand.push   { border-color: rgba(196, 181, 253, 0.55); background: rgba(196, 181, 253, 0.06); }
+.bj-hand-meta {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+/* Cards */
+.bj-card-face {
+  width: 64px;
+  height: 92px;
+  background: #fafafa;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.bj-card-red   { color: #d83b3b; }
+.bj-card-black { color: #1a1530; }
+/* Card rank letters use a classic-card serif stack instead of Sora,
+   which renders Q with a narrow body + thin underline tail that read
+   as awkward at small sizes. Georgia / Cambria / Times have the proper
+   round Q with a diagonal tail that crosses the bowl — the form you
+   expect on a playing card. */
+.bj-card-corner {
+  position: absolute;
+  font-family: "Georgia", "Cambria", "Times New Roman", serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.bj-card-corner span { font-size: 13px; }
+.bj-card-tl { top: 6px;    left: 7px;  }
+.bj-card-br { bottom: 6px; right: 7px; transform: rotate(180deg); }
+.bj-card-suit {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+}
+.bj-card-back {
+  background: linear-gradient(135deg, #6d3bd7 0%, #3B82F6 100%);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0 6px, transparent 6px 12px),
+    linear-gradient(135deg, #6d3bd7 0%, #3B82F6 100%);
+}
+
+/* Controls */
+.bj-controls { display: flex; flex-direction: column; gap: 10px; }
+.bj-bet-row, .bj-action-row, .bj-insurance-row, .bj-next-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+/* The default [hidden] { display: none } gets overridden by the class
+   rule above (class beats attribute on `display`), so the JS-driven
+   `.hidden = true` wasn't actually hiding the insurance row when the
+   dealer wasn't showing an Ace. Explicit override restores hiding. */
+.bj-bet-row[hidden],
+.bj-action-row[hidden],
+.bj-insurance-row[hidden],
+.bj-next-row[hidden] {
+  display: none;
+  flex-wrap: wrap;
+}
+.bj-bet-label, .bj-insurance-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-right: 4px;
+}
+.bj-chip {
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  color: #fff;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.bj-chip:hover:not(:disabled) { background: rgba(139, 92, 246, 0.32); }
+.bj-chip:active:not(:disabled) { transform: translateY(1px); }
+.bj-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+.bj-chip-clear { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.45); }
+.bj-bet-current {
+  font-family: "Sora", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-left: 8px;
+  min-width: 100px;
+}
+.bj-deal-btn { margin-left: auto; min-width: 100px; }
+.bj-action { min-width: 96px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+/* "Deal Cards" — plain large glowing white text, dead-centered in the
+   table (both axes) via absolute positioning so it ignores the flex
+   distribution of the dealer/player sections above and below it. */
+.bj-message.bj-message-cta {
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: calc(100% - 36px);
+  z-index: 2;
+}
+.bj-deal-cta-text {
+  font-family: "Sora", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 24px rgba(139, 92, 246, 0.65),
+               0 0 48px rgba(139, 92, 246, 0.35);
+  transition: opacity 0.15s ease, text-shadow 0.15s ease;
+}
+.bj-message.bj-message-cta:hover .bj-deal-cta-text {
+  text-shadow: 0 0 30px rgba(196, 181, 253, 0.85),
+               0 0 60px rgba(139, 92, 246, 0.55);
+}
+/* Result phase — whole message is the "Click to clear" click target. */
+.bj-message.bj-message-clear {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.bj-message.bj-message-clear:hover { color: #c4b5fd; }
+/* Bankroll count-up tint — fires on win/push. Green glow while rising. */
+.bj-stat-value.bj-bankroll-rising {
+  color: #86efac;
+  text-shadow: 0 0 12px rgba(34, 197, 94, 0.55);
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+/* Card dealing animation — slides in from upper-left, fades up. */
+@keyframes bj-card-slide-in {
+  from {
+    opacity: 0;
+    transform: translate(-32vw, -90px) rotate(-14deg);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+}
+.bj-card-face.bj-card-dealing {
+  animation: bj-card-slide-in 0.36s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+/* Hole-card reveal — quick flip in place when the dealer turns over. */
+@keyframes bj-card-flip-reveal {
+  0%   { transform: rotateY(0deg);   }
+  50%  { transform: rotateY(90deg);  }
+  100% { transform: rotateY(0deg);   }
+}
+.bj-card-face.bj-card-flipping {
+  animation: bj-card-flip-reveal 0.55s ease-in-out both;
+  backface-visibility: hidden;
+}
+.bj-action-emoji { font-size: 14px; line-height: 1; }
+/* Subtle Hit (green) and Stand (red) tints — readable without screaming.
+   Border picks up the family color; bg stays glass. */
+.bj-action-hit {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #d1fae5;
+}
+.bj-action-hit:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.55);
+}
+.bj-action-stand {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fee2e2;
+}
+.bj-action-stand:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+.bj-rules {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  text-align: center;
+  letter-spacing: 0.02em;
+  padding-top: 6px;
+}
+
+/* ============================================================
+   BLACKJACK PULL-QUOTE — editorial flourish at the bottom of
+   the table. Big decorative purple opening curl floats above
+   an italic line; the name uses a plasma→nebula gradient text
+   fill, and the role is mono-tracked caps for tonal contrast.
+   ============================================================ */
+.bj-quote {
+  position: relative;
+  margin: 30px auto 6px;
+  padding: 26px 44px 22px;        /* room for the curls without crowding text */
+  max-width: 620px;
+  text-align: left;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.bj-quote-mark {
+  position: absolute;
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  color: rgba(139, 92, 246, 0.42);
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 0 16px rgba(139, 92, 246, 0.40);
+}
+.bj-quote-mark-open  { top: 22px; left: 4px; }
+.bj-quote-mark-close { top: 22px; right: 4px; }
+.bj-quote-text {
+  font-family: "Sora", sans-serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  color: #ffffff;
+  margin: 0 0 18px;
+}
+.bj-quote-attrib {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.bj-quote-name {
+  font-family: "Sora", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #c4b5fd 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.bj-quote-role {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
