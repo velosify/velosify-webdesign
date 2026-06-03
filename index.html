@@ -566,6 +566,122 @@
   .twilio-counter-fill {
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  /* ---- Embedded checkout modal (Stripe Embedded Checkout) ---- */
+  .checkout-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(2, 4, 10, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .checkout-overlay.open { display: flex; }
+  .checkout-panel {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 24px;
+    border: 1px solid rgba(139, 92, 246, 0.45);
+    background:
+      linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.10)),
+      #0a0d16;
+    box-shadow:
+      0 26px 55px -12px rgba(139, 92, 246, 0.34),
+      0 12px 28px -6px rgba(59, 130, 246, 0.22);
+    padding: 20px;
+    animation: checkout-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes checkout-pop {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .checkout-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 5;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e0e2ee;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .checkout-close:hover {
+    background: rgba(139, 92, 246, 0.3);
+    border-color: rgba(139, 92, 246, 0.6);
+  }
+  .checkout-title {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #c4a3ff;
+    text-align: center;
+    margin: 4px 0 14px;
+  }
+  /* Stripe mounts an iframe in here; give it a rounded light well so the
+     checkout form doesn't look pasted on. */
+  .checkout-mount {
+    border-radius: 14px;
+    overflow: hidden;
+    min-height: 360px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .checkout-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 360px;
+    color: #9b96a8;
+    font-size: 14px;
+    text-align: center;
+    padding: 0 12px;
+  }
+  .checkout-spinner {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 2px solid rgba(139, 92, 246, 0.25);
+    border-top-color: #8B5CF6;
+    animation: checkout-spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes checkout-spin { to { transform: rotate(360deg); } }
+  /* Success toast after returning from a completed payment */
+  .payment-success-toast {
+    position: fixed;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 90;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    color: #bbf7d0;
+    padding: 12px 22px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+  }
 </style>
   <!-- Google Analytics 4 (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z0NK8YEZM7"></script>
@@ -830,7 +946,7 @@ Live in <span class="text-white font-bold">24–48 hours</span>. Edited every mo
         <span><span class="text-white font-bold">Velosify CRM</span> lead management</span>
       </li>
     </ul>
-    <a href="https://buy.stripe.com/00w28ta6K6Y7907fLO5kk00" class="pricing-cta mt-auto"><span>Pay Now</span></a>
+    <a href="https://buy.stripe.com/00w28ta6K6Y7907fLO5kk00" class="pricing-cta mt-auto" onclick="event.preventDefault();openCheckout('launch', this.href);"><span>Pay Now</span></a>
   </div>
 </div>
 <!-- Growth — $2,000 (featured) -->
@@ -869,7 +985,7 @@ Live in <span class="text-white font-bold">24–48 hours</span>. Edited every mo
         <span><span class="text-white font-bold">Velosify CRM</span> lead management</span>
       </li>
     </ul>
-    <a href="https://buy.stripe.com/00wbJ31Ae1DNccj2Z25kk01" class="pricing-cta mt-auto"><span>Pay Now</span></a>
+    <a href="https://buy.stripe.com/00wbJ31Ae1DNccj2Z25kk01" class="pricing-cta mt-auto" onclick="event.preventDefault();openCheckout('growth', this.href);"><span>Pay Now</span></a>
   </div>
 </div>
 <!-- Scale — $3,000. Same 2px wrapper as Launch/Growth for alignment. -->
@@ -908,7 +1024,7 @@ Live in <span class="text-white font-bold">24–48 hours</span>. Edited every mo
         <span><span class="text-white font-bold">Velosify CRM</span> lead management</span>
       </li>
     </ul>
-    <a href="https://buy.stripe.com/28E8wRen0circcj6be5kk02" class="pricing-cta mt-auto"><span>Pay Now</span></a>
+    <a href="https://buy.stripe.com/28E8wRen0circcj6be5kk02" class="pricing-cta mt-auto" onclick="event.preventDefault();openCheckout('scale', this.href);"><span>Pay Now</span></a>
   </div>
 </div>
 </div>
@@ -1585,6 +1701,90 @@ Live in <span class="text-white font-bold">24–48 hours</span>. Edited every mo
         }
       }, 100);
     });
+  })();
+</script>
+<!-- Embedded Stripe Checkout modal -->
+<div class="checkout-overlay" id="checkout-overlay" role="dialog" aria-modal="true" aria-label="Checkout">
+<div class="checkout-panel">
+<button class="checkout-close" id="checkout-close" aria-label="Close checkout">&#10005;</button>
+<div class="checkout-title" id="checkout-title">Secure Checkout</div>
+<div class="checkout-status" id="checkout-status" style="display:none;"></div>
+<div class="checkout-mount" id="checkout-mount"></div>
+</div>
+</div>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  /* ---- Embedded Checkout modal ----
+     Pay Now buttons call openCheckout(tier). The Stripe checkout form
+     mounts inside the themed modal — no redirect. If anything fails
+     (function not deployed, Stripe error), we fall back to the button's
+     original payment-link href so the sale is never blocked. */
+  (function embeddedCheckout() {
+    var STRIPE_PK = 'pk_live_REPLACE_ME';
+    var overlay = document.getElementById('checkout-overlay');
+    var mountEl = document.getElementById('checkout-mount');
+    var statusEl = document.getElementById('checkout-status');
+    var titleEl = document.getElementById('checkout-title');
+    var closeBtn = document.getElementById('checkout-close');
+    var stripeInstance = null;
+    var checkout = null;
+    var TIER_LABELS = { launch: 'Launch — $1,000', growth: 'Growth — $2,000', scale: 'Scale — $3,000' };
+
+    function setStatus(html) {
+      statusEl.style.display = html ? 'flex' : 'none';
+      statusEl.innerHTML = html || '';
+      mountEl.style.display = html ? 'none' : 'block';
+    }
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      if (checkout) { try { checkout.destroy(); } catch (e) {} checkout = null; }
+      mountEl.innerHTML = '';
+    }
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+
+    window.openCheckout = function (tier, fallbackUrl) {
+      if (STRIPE_PK.indexOf('REPLACE') !== -1 || typeof Stripe === 'undefined' || location.protocol === 'file:') {
+        window.location.href = fallbackUrl;
+        return;
+      }
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      titleEl.textContent = 'Secure Checkout · ' + (TIER_LABELS[tier] || '');
+      setStatus('<div class="checkout-spinner"></div><span>Preparing your checkout…</span>');
+      fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: tier })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data.clientSecret) throw new Error(data.error || 'No client secret');
+          if (!stripeInstance) stripeInstance = Stripe(STRIPE_PK);
+          return stripeInstance.initEmbeddedCheckout({ clientSecret: data.clientSecret });
+        })
+        .then(function (co) {
+          checkout = co;
+          setStatus('');
+          checkout.mount('#checkout-mount');
+        })
+        .catch(function (err) {
+          // Fall back to the hosted payment link so payment still works.
+          window.location.href = fallbackUrl;
+        });
+    };
+
+    // Success toast when Stripe returns the customer to /?payment=success
+    if (new URLSearchParams(location.search).get('payment') === 'success') {
+      var toast = document.createElement('div');
+      toast.className = 'payment-success-toast';
+      toast.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">check_circle</span><span>Payment received — we’ll be in touch within 24 hours!</span>';
+      document.body.appendChild(toast);
+      history.replaceState(null, '', location.pathname);
+      setTimeout(function () { toast.remove(); }, 8000);
+    }
   })();
 </script>
 </body>
